@@ -1,0 +1,54 @@
+model: claude-sonnet-5  # recommended for cost-appropriate structured synthesis; override freely
+
+max_tokens:
+  ask: 4096
+  ingest: 8192
+  meeting: 8192
+  directive: 4096
+
+effort:
+  ask: medium
+  ingest: high
+  meeting: high
+  directive: medium
+
+paths:
+  hq_root: hq
+  prompts_root: brain/prompts
+
+stale_directive_days: 30
+decision_log_recent_n: 20
+
+departments:
+  - name: market_intel
+    tier: 0
+    status: dormant
+    report_cadence: weekly
+  - name: creative
+    tier: 0
+    status: dormant
+    report_cadence: weekly
+  - name: content
+    tier: 0
+    status: dormant
+    report_cadence: weekly
+  - name: product
+    tier: 0
+    status: dormant
+    report_cadence: weekly
+  - name: storefront
+    tier: 0
+    status: dormant
+    report_cadence: weekly
+  - name: customer
+    tier: 0
+    status: dormant
+    report_cadence: weekly
+  - name: paid_ads
+    tier: 0
+    status: dormant
+    report_cadence: weekly
+  - name: finance
+    tier: 0
+    status: dormant
+    report_cadence: weekly
