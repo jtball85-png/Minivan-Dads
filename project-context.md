@@ -17,11 +17,11 @@ Minivan Dads Inc. is a print-on-demand apparel brand (Printful catalog, "Old Guy
 | Layer | Tool/Language | Notes |
 |---|---|---|
 | Frontend | None | CLI only |
-| Backend | Python | CLI app (`python -m brain <command>`), uses Claude Agent SDK / Anthropic API |
+| Backend | Python | CLI app (`python -m brain <command>`), uses the `anthropic` Python SDK (Anthropic API) directly |
 | Database | None (HQ) | HQ is plain Markdown + directories — human-readable, git-diffable, no DB |
 | Auth | None | Single-operator (CEO) local tool |
 | Deployment | Local only | No hosting in Phase 1 |
-| AI / APIs | Anthropic API (Claude Agent SDK) | System prompts versioned as files in `brain/prompts/` |
+| AI / APIs | Anthropic API (`anthropic` SDK) | System prompts versioned as files in `brain/prompts/` |
 
 ## Data model
 HQ is the data model — a structured file store, not a database:
@@ -46,14 +46,12 @@ The CEO (human) runs CLI commands against HQ:
 Brand new — no code written yet. This session is scaffolding the project's memory/tracking files and initializing git with the GitHub remote. Full build plan and acceptance criteria are defined in `minivan-dads-brain-project-brief.md` and `minivan-dads-phase-roadmap.md` (both in project root; the roadmap should be copied to `hq/charter/roadmap.md` when HQ is scaffolded).
 
 ## Where we left off
-Last commit: N/A
-In progress: Project setup — first session
+Last commit: e056da5 — Implement brain directive command; Phase 1 CLI surface complete (increment 5)
+In progress: none (only untracked .claude/ local config, intentionally not committed)
 Branch: main
 
 ## What's next
-- [ ] Scaffold repo + HQ structure with seeded charter, tiers, templates — Claude Code
-- [ ] `hq.py` read/write layer with tests (report discovery by week, append-only log writes, escalation moves) — Claude Code
-- [ ] `brain status` and `brain ask` commands — Claude Code
+- [ ] Increment 6: README usage section + governance keyword-list dogfooding pass — Claude Code
 
 ## File structure
 ```
@@ -87,7 +85,7 @@ Thinking, planning, decisions, and fuzzy problems.
 Flag architecture changes or scope changes before acting.
 
 ### Claude Code
-Building and editing files. Tech stack: Python CLI (Claude Agent SDK / Anthropic API) reading/writing a Markdown filesystem (HQ) — no frontend, backend server, or database.
+Building and editing files. Tech stack: Python CLI (`anthropic` SDK / Anthropic API) reading/writing a Markdown filesystem (HQ) — no frontend, backend server, or database.
 Run /start-of-day at the start of every session.
 Run /end-of-day at the end of every session.
 
@@ -96,4 +94,5 @@ Browser tasks, desktop automation, file management.
 Use project-context-updater.html on Cowork-heavy days.
 
 ## Change log
+- 2026-07-15 — Scaffolded HQ + brain skeleton; implemented hq.py/governance.py with 44 passing tests; implemented all five CLI commands (status, ask, ingest, meeting, directive); brief's acceptance test passed end-to-end (commits 6ac7bc9, 57d882b, 3f86e86, 11f91c3, e056da5) — Source: Claude Code
 - 2026-07-15 — Project initialized — Source: Claude Code
