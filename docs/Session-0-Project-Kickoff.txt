@@ -1,0 +1,121 @@
+SESSION 0 — APP PROJECT REFERENCE GUIDE
+=========================================
+This is a reference doc explaining what /new-project does for app projects.
+You do not run through this manually — /new-project handles it automatically.
+Read this once to understand the system. Then trust the skill.
+
+
+WHAT /new-project DOES FOR APP PROJECTS
+-----------------------------------------
+When you run /new-project in Claude Code, it:
+
+  1. Asks you to describe your app idea
+  2. Asks the architecture question — does it save data?
+  3. Walks through your tech stack layer by layer
+  4. Maps the user flow — what a user does start to finish
+  5. Asks about data model, environment variables, and known risks
+  6. Fills out project-context.md completely — no placeholders
+  7. Creates project-memory.md to capture session decisions
+  8. Commits both files as your project's first checkpoint
+
+You do not fill out project-context.md manually.
+You do not make the architecture decision alone.
+/new-project walks you through it.
+
+
+THE MOST IMPORTANT QUESTION
+-----------------------------
+Before any code is written, /new-project will ask:
+
+  "Does this app need to save data between sessions or between users?"
+
+This is the question that determines everything:
+
+  No  → Static frontend. HTML/CSS/JS only.
+        No server. No database. Deploy by dropping a folder on Vercel.
+
+  Yes → Full stack. Frontend + Backend + Database.
+        Users log in. Data persists. Secrets stay hidden from the browser.
+
+  Not sure → Start static. Plan to upgrade.
+             It's easier to add a backend later than to remove one.
+
+Answer honestly. "Not sure" is a valid answer.
+
+
+WHAT /new-project ASKS YOU (APP VERSION)
+------------------------------------------
+These are the questions it will ask, one at a time:
+
+  1.  What's the idea? What do you want this app to do?
+  2.  Does it need to save data? (architecture decision)
+  3.  Does it need to hide secrets from the browser?
+  4.  Tech stack — frontend, backend, database, auth, deployment, APIs
+  5.  User flow — walk through the app as a user start to finish
+  6.  Data model — what are the things in this app and how do they relate?
+  7.  Current status — new, started, or stalled?
+  8.  What exists already?
+  9.  First 3 tasks to move forward
+  10. Tool assignment — Chat / Claude Code / Cowork for each task
+  11. Environment variables — what secrets will this app need?
+  12. Known risks — what's the hardest part to build?
+
+Take your time. Claude will ask follow-up questions if answers are unclear.
+
+
+BEFORE RUNNING /new-project
+-----------------------------
+  [ ] Copy the app-project-template folder
+  [ ] Rename it for your new project
+  [ ] Open it in VS Code
+  [ ] Make sure git is initialized (the .git folder exists)
+  [ ] Open Claude Code
+
+
+AFTER /new-project COMPLETES
+------------------------------
+  [ ] Review the generated project-context.md — confirm it looks right
+  [ ] Paste Project-Instructions.txt into your Claude Project instructions box
+  [ ] Run /start-of-day to begin your first working session
+  [ ] Run /end-of-day when you're done for the day
+
+
+THE TWO MEMORY FILES
+----------------------
+project-context.md
+  What the app is, architecture decision, tech stack, user flow,
+  where it stands, what's next. Claude reads this to know project status.
+
+project-memory.md
+  Decisions, reasoning, and session context.
+  Claude reads this to remember why things are the way they are —
+  especially architecture and tech stack choices.
+
+Both files are updated automatically by /end-of-day.
+Both files are read automatically by /start-of-day.
+
+
+ARCHITECTURE QUICK REFERENCE
+------------------------------
+Static frontend   = HTML/CSS/JS only. No server. No database.
+                    Use when: no saved data, no user accounts, no secrets.
+                    Deploy: drop a folder on Vercel or Netlify. Done.
+
+Full stack        = Frontend + Backend + Database.
+                    Use when: users log in, data persists, secrets must be hidden.
+                    Common simple stack: HTML/JS + Supabase + Vercel.
+
+The question: "Does this app need to remember anything between visits,
+or between different users?"
+  No  → static frontend
+  Yes → full stack
+
+
+DAILY WORKFLOW AFTER SESSION 0
+--------------------------------
+See Daily-Workflow.txt for the full reference.
+
+Short version:
+  Start of day  →  /start-of-day
+  End of day    →  /end-of-day
+  New project   →  /new-project (once only)

@@ -1,0 +1,96 @@
+CLAUDE APP PROJECT SYSTEM — DAILY WORKFLOW
+===========================================
+Your step-by-step guide for every type of work day.
+
+
+DAY ONE OF A NEW APP PROJECT
+------------------------------
+  [ ] Copy the app-project-template folder
+  [ ] Rename it for your new project
+  [ ] Open it in VS Code
+  [ ] Open Claude Code
+  [ ] Run: /new-project
+      (Asks about your app idea, architecture, and tech stack.
+       Fills out project-context.md, creates project-memory.md,
+       commits both.)
+  [ ] Work
+  [ ] Run: /end-of-day
+
+
+START OF EVERY WORK DAY (Claude Code)
+---------------------------------------
+  [ ] Open VS Code — project loads automatically
+  [ ] Open Claude Code
+  [ ] Run: /start-of-day
+      (Reads both memory files, confirms architecture and tech stack,
+       asks what you're working on today)
+  [ ] Work
+
+
+END OF EVERY WORK DAY (Claude Code)
+--------------------------------------
+  [ ] Run: /end-of-day
+      (Captures session decisions into project-memory.md,
+       updates project-context.md, commits both files)
+
+
+START OF A CHAT SESSION
+-------------------------
+  [ ] Open your Claude Project in Chat
+  [ ] Paste project-context.md to orient Claude
+  [ ] Work — use Chat for architecture decisions and planning
+
+
+END OF A COWORK-HEAVY DAY
+---------------------------
+  [ ] Open project-context-updater.html in your browser
+  [ ] Drop in your current project-context.md
+  [ ] Paste your Cowork session summary and any notes
+  [ ] Hit update — download the new file
+  [ ] Replace project-context.md in your Claude Project
+
+
+EVERY 20 CHANGE LOG ENTRIES
+-----------------------------
+Chat will remind you automatically. When it does:
+
+  [ ] Save current doc as project-context-archive-[month-year].md
+  [ ] Move it to your /archive folder
+  [ ] Ask Chat: "Help me write a fresh project-context.md based
+      on where this project stands today."
+  [ ] Replace project-context.md in your Claude Project
+
+
+TOOL QUICK REFERENCE
+----------------------
+Claude Code   = Building, editing, reading files
+                /new-project  → day one of any new app project
+                /start-of-day → every session start
+                /end-of-day   → every session end
+
+Chat          = Architecture decisions, planning, fuzzy problems
+                Paste project-context.md at session start
+
+Cowork        = Browser tasks, desktop automation, file management
+                Use project-context-updater.html at end of day
+
+
+ARCHITECTURE QUICK REFERENCE
+------------------------------
+Static frontend   = HTML/CSS/JS only. No server. No database.
+                    Use when: no saved data, no user accounts, no secrets.
+
+Full stack        = Frontend + Backend + Database.
+                    Use when: users log in, data persists, secrets must be hidden.
+
+The question to ask:
+"Does this app need to remember anything between visits or between users?"
+  No  → static frontend
+  Yes → full stack
+
+
+THE ONE RULE
+-------------
+project-context.md and project-memory.md are your project's memory.
+Claude has no memory between sessions — these files are how it remembers.
+Keep them current. /end-of-day handles it automatically.
