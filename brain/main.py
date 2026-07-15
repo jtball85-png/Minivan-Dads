@@ -274,6 +274,67 @@ def cmd_meeting(hq: HQ, llm: LLM, config: BrainConfig) -> None:
     print(f"Escalations resolved: {resolved_count}")
 
 
+def cmd_directive(hq: HQ, llm: LLM, config: BrainConfig, department: str) -> None:
+    if department not in hq.list_departments():
+        print(f"Unknown department: {department!r}. Registered: {', '.join(hq.list_departments())}")
+        return
+
+    try:
+        current = hq.read_directive(department)
+    except FileNotFoundError:
+        current = "(no directive on file yet)"
+
+    print(f"=== Current directive: {department} ===\n")
+    print(current)
+    print("\nDescribe the changes you want (end with an empty line):")
+
+    lines: list[str] = []
+    while True:
+        try:
+            line = input()
+        except EOFError:
+            break
+        if line.strip() == "" and lines:
+            break
+        lines.append(line)
+    changes = "\n".join(lines).strip()
+    if not changes:
+        print("No changes described; nothing to do.")
+        return
+
+    user_message = (
+        f"Department: {department}\n\n"
+        f"Current directive:\n\n{current}\n\n"
+        f"CEO's requested changes:\n\n{changes}\n\n"
+        f"Today's date is {date.today().isoformat()}."
+    )
+    system_blocks = build_system_blocks(config, hq, "directive.md")
+    response = llm.call(system_blocks, user_message, max_tokens=config.max_tokens["directive"])
+
+    print("\n" + response)
+
+    if "[REQUIRES BOARD DECISION]" in response:
+        print(
+            "\nThis request includes a tier change, which is a board decision — "
+            "the directive was NOT written. File it as an escalation or raise it "
+            "at the next board meeting (`brain ingest` / `brain meeting`)."
+        )
+        return
+
+    fence_m = FENCED_BLOCK_RE.search(response)
+    if not fence_m:
+        print("\nNo fenced directive block found in the response — nothing written.")
+        return
+
+    new_content = fence_m.group(1).strip() + "\n"
+    confirm = input(f"\nWrite this directive to hq/directives/{department}.md? [y/N] ").strip().lower()
+    if confirm == "y":
+        path = hq.write_directive(department, new_content)
+        print(f"Written: {path}")
+    else:
+        print("Not written.")
+
+
 def cli() -> None:
     load_dotenv()
 
@@ -287,6 +348,9 @@ def cli() -> None:
 
     subparsers.add_parser("ingest", help="Synthesize reports into this week's agenda")
     subparsers.add_parser("meeting", help="Hold the board meeting on this week's agenda")
+
+    directive_parser = subparsers.add_parser("directive", help="Create or revise a department directive")
+    directive_parser.add_argument("department", help="Department name (e.g. market_intel)")
 
     args = parser.parse_args()
 
@@ -304,6 +368,9 @@ def cli() -> None:
     elif args.command == "meeting":
         llm = LLM(config)
         cmd_meeting(hq, llm, config)
+    elif args.command == "directive":
+        llm = LLM(config)
+        cmd_directive(hq, llm, config, args.department)
 
 
 if __name__ == "__main__":

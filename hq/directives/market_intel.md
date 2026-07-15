@@ -29,9 +29,15 @@ weekly (once activated)
 
 ## Standing orders
 
-None yet, with one exception approved at the 2026-W29 board meeting:
+None yet, with the following exceptions:
 
 - Watch list scope, once the department is activated, is to include Etsy,
   Amazon Merch, and TikTok Shop (expanded from Etsy-only per the
   department's own finding that a narrower list was producing repetitive,
-  staling reports).
+  staling reports), approved at the 2026-W29 board meeting.
+
+- Watch list scope further expands to include Reddit dad-humor
+  subreddits (e.g. r/daddit and similar), per CEO request on 2026-07-15.
+  This remains read-only research — observation and reporting only, no
+  posting, commenting, or account activity of any kind, consistent with
+  Tier 0.
