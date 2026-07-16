@@ -53,6 +53,14 @@ table. Voice input is your OS dictation key (Win+H) into any prompt.
 
 ## The CEO dashboard
 
+**Daily front door: double-click `Minivan Dads HQ.bat`** in the project
+folder — it starts the console (if not already running) and opens it in
+your browser. To stop the server, close the minimized "Minivan Dads HQ"
+window on the taskbar. Tip: right-click the .bat → Send to → Desktop
+(create shortcut) for a desktop icon.
+
+Terminal fallback:
+
 ```bash
 brain dashboard        # then open http://127.0.0.1:8712
 ```
