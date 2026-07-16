@@ -43,7 +43,7 @@ The CEO (human) runs CLI commands against HQ:
 5. `brain directive <department>` — generates/revises a department's standing directive interactively, validated against the charter and tiers.
 
 ## Current status
-Brand new — no code written yet. This session is scaffolding the project's memory/tracking files and initializing git with the GitHub remote. Full build plan and acceptance criteria are defined in the handoff docs under `docs/specs/` (brief, roadmap, action-layer spec, boardroom/dashboard spec, progress summary, UX demos); the roadmap also lives at `hq/charter/roadmap.md`.
+Phase 1 complete and acceptance-tested: HQ + all five brain commands, plus the §7 additions from the 7/16 specs — free-text-everywhere CLI with `brain` console script, executor framework (registry/limits/capability ladder/rollback, fake connectors only), boardroom protocol (CLI + dashboard, honesty norm enforced structurally), and the CEO dashboard (four tabs, streaming ask chat, live boardroom). Phase 2 is live: market_intel is active at Tier 0 with a real directive, running Thursday nights via GitHub Actions (secret set, workflow active); its first live report and escalation are in HQ. Phase 3 (Creative + Content) is gated on the Phase 2 exit criteria — a directive change visibly changing the next report, plus a hard shop-open date — which need real calendar weeks and CEO work, not more code. Handoff docs live under `docs/specs/`; roadmap also at `hq/charter/roadmap.md`. 174 tests passing.
 
 ## Where we left off
 Last commit: e056da5 — Implement brain directive command; Phase 1 CLI surface complete (increment 5)
@@ -79,7 +79,7 @@ Branch: main
 - 2026-07-15 — GitHub sync target set to https://github.com/jtball85-png/Minivan-Dads
 
 ## Known issues
-None at this time — brand new build. Hardest anticipated part: getting the [BRAIN DECIDES] vs [CEO REQUIRED] triage logic right and keeping the decision log trustworthy and truly append-only.
+None blocking. Watch items: first scheduled market_intel run fires Thursday night — ESC-003 in the escalation queue is the reminder to verify it Friday before `brain ingest`; ESC-002 (trademark prior-use of "minivan dad"/"swagger wagon" phrasing) awaits a CEO ruling at the first real board meeting.
 
 ## Context for each tool
 
