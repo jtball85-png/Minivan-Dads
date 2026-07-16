@@ -17,20 +17,12 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from brain.config import BrainConfig, find_repo_root, load_config
-from brain.governance import DECISION_HEADING_RE, apply_governance
 from brain.hq import HQ
 from brain.interaction import Exchange, prompt_with_freetext, render_exchanges
 from brain.llm import LLM
-from brain.models import DecisionEntry, MeetingRuling
+from brain.models import DecisionEntry
 from brain.prompts import build_system_blocks
-from brain.records import (
-    FENCED_BLOCK_RE,
-    RESOLVED_LINE_RE,
-    extract_directive_updates,
-    parse_decision_entries,
-    split_sections,
-    tier_or_status_changed,
-)
+from brain.records import FENCED_BLOCK_RE
 
 
 def make_discusser(llm: LLM, config: BrainConfig, hq: HQ, item_context: str):
@@ -149,178 +141,63 @@ def cmd_ask(hq: HQ, llm: LLM, config: BrainConfig, question: str) -> None:
 
 
 def cmd_ingest(hq: HQ, llm: LLM, config: BrainConfig) -> None:
-    week = hq.current_week_key()
-    last_meeting = hq.last_meeting_date()
-    since_week = hq.week_key_for_date(last_meeting) if last_meeting else "1970-W01"
+    from brain.meeting import run_ingest
 
-    reports = hq.discover_reports(since_week)
-    filed = {dept: entries for dept, entries in reports.items() if entries}
-    print(f"Reports found since {since_week}: "
-          + (", ".join(f"{d} ({len(e)})" for d, e in filed.items()) if filed else "none"))
-
-    system_blocks = build_system_blocks(config, hq, "ingest.md")
-    trigger = (
-        f"Prepare the board meeting agenda for {week}. "
-        f"Reports discovered since the last meeting are already in your context."
-    )
-    raw_agenda = llm.call(system_blocks, trigger, max_tokens=config.max_tokens["ingest"])
-
-    corrected_agenda, enforced = apply_governance(raw_agenda)
-    upgrades = [e for e in enforced if e.upgraded]
-
-    path = hq.write_agenda(week, corrected_agenda)
-
-    print(f"\nAgenda written: {path}")
-    print(f"Proposed decisions: {len(enforced)}")
-    if upgrades:
-        print(f"Governance upgrades to [CEO REQUIRED]: {len(upgrades)}")
-        for e in upgrades:
-            print(f"  - {e.title}: {'; '.join(e.reasons)}")
-
-
-MEETING_OUTPUT_SECTIONS = ["Minutes", "Decision Log Entries", "Directive Updates", "Resolved Escalations"]
-# Split ONLY on the four known section headings — directive content inside
-# the output legitimately contains its own ## headings (## Tier, ## Mandate)
-# and must not break the split.
-MEETING_SECTION_RE = re.compile(
-    r"^## (Minutes|Decision Log Entries|Directive Updates|Resolved Escalations)\s*$", re.MULTILINE
-)
+    summary = run_ingest(hq, llm, config)
+    print(f"\nAgenda written: {summary['path']}")
+    print(f"Proposed decisions: {summary['decisions']}")
+    if summary["upgrades"]:
+        print(f"Governance upgrades to [CEO REQUIRED]: {len(summary['upgrades'])}")
+        for u in summary["upgrades"]:
+            print(f"  - {u['title']}: {'; '.join(u['reasons'])}")
 
 
 RULING_OPTIONS = {"a": "approve", "m": "modify", "r": "reject", "s": "skip"}
 
 
-def _collect_rulings(agenda: str, discusser_factory) -> list[MeetingRuling]:
-    """Walk the agenda's decision blocks interactively, one at a time.
+def cmd_meeting(hq: HQ, llm: LLM, config: BrainConfig) -> None:
+    from brain.meeting import MeetingSession
 
-    `discusser_factory(item_context) -> discuss callable` — free text typed at
-    the ruling prompt becomes a sidebar conversation with the brain about the
-    current item, recorded on the ruling.
-    """
-    blocks = list(DECISION_HEADING_RE.finditer(agenda))
-    if not blocks:
+    session = MeetingSession(llm, config, hq)
+    try:
+        items = session.load_agenda()
+    except FileNotFoundError as e:
+        print(e)
+        return
+    if not items:
         print("No proposed decisions found in the agenda.")
-        return []
+        return
 
-    rulings: list[MeetingRuling] = []
-    for i, m in enumerate(blocks):
-        start = m.start()
-        end = blocks[i + 1].start() if i + 1 < len(blocks) else len(agenda)
-        block_text = agenda[start:end].strip()
-        title = m.group(1).strip()
+    print(f"=== Board Meeting — {session.week} ===")
+    for i, item in enumerate(items):
+        print(f"\n--- Item {i + 1} of {len(items)} ---")
+        print(item.block_text)
 
-        print(f"\n--- Item {i + 1} of {len(blocks)} ---")
-        print(block_text)
-
-        discussion: list[Exchange] = []
         action = prompt_with_freetext(
             "\n[a]pprove / [m]odify / [r]eject / [s]kip — or just talk to the brain: ",
             RULING_OPTIONS,
-            discuss=discusser_factory(block_text),
-            transcript=discussion,
+            discuss=lambda text, history, item_id=item.id: session.discuss(item_id, text),
         )
-
         note = ""
         if action == "modify":
             note = input("Your modification/ruling: ").strip()
         elif action == "reject":
             note = input("Why (for the record, optional): ").strip()
+        session.record_ruling(item.id, action, note)
 
-        rulings.append(
-            MeetingRuling(item_title=title, action=action, ceo_note=note, discussion=discussion)
-        )
+    def cli_ratify(dept: str, change: str) -> bool:
+        print(f"\nThe synthesized directive for {dept} includes a tier/status "
+              f"change ({change}). Tier changes are explicit board decisions.")
+        return input(f"Ratify this change for {dept} now? [y/N] ").strip().lower() == "y"
 
-    return rulings
-
-
-def _render_rulings(rulings: list[MeetingRuling]) -> str:
-    """Render collected rulings (with any sidebar discussion) for synthesis."""
-    parts = []
-    for r in rulings:
-        line = f"- {r.item_title}: {r.action.upper()}"
-        if r.ceo_note:
-            line += f" — CEO note: {r.ceo_note}"
-        if r.discussion:
-            line += "\n  Discussion during ruling:\n" + render_exchanges(r.discussion, indent="    ")
-        parts.append(line)
-    return "\n".join(parts)
-
-
-def cmd_meeting(hq: HQ, llm: LLM, config: BrainConfig) -> None:
-    week = hq.current_week_key()
-    agenda_path = hq.root / "meetings" / f"{week}-agenda.md"
-    if not agenda_path.exists():
-        print(f"No agenda for {week}. Run `brain ingest` first.")
-        return
-
-    agenda = agenda_path.read_text(encoding="utf-8")
-    print(f"=== Board Meeting — {week} ===")
-
-    rulings = _collect_rulings(
-        agenda, discusser_factory=lambda ctx: make_discusser(llm, config, hq, ctx)
-    )
-    if not rulings:
-        print("Nothing to record; no minutes written.")
-        return
-
-    rulings_text = _render_rulings(rulings)
-    user_message = (
-        f"The {week} board meeting is over. Here is the agenda:\n\n{agenda}\n\n"
-        f"---\n\nThe CEO's rulings:\n\n{rulings_text}\n\n"
-        f"Today's date is {date.today().isoformat()}. Produce the meeting records."
-    )
-
-    system_blocks = build_system_blocks(config, hq, "meeting_synthesis.md")
-    output = llm.call(system_blocks, user_message, max_tokens=config.max_tokens["meeting"])
-
-    sections = split_sections(output, MEETING_SECTION_RE)
-    missing = [s for s in MEETING_OUTPUT_SECTIONS if s not in sections]
-    if missing:
-        # Don't lose the meeting: write the raw output as minutes and stop.
-        hq.write_minutes(week, output)
-        print(f"Warning: synthesis output missing sections {missing}. "
-              f"Raw output saved as minutes; log/directives/escalations NOT auto-applied — review manually.")
-        return
-
-    minutes_path = hq.write_minutes(week, f"# Board Meeting Minutes — {week}\n\n{sections['Minutes']}\n")
-    print(f"Minutes written: {minutes_path}")
-
-    entries = parse_decision_entries(sections["Decision Log Entries"])
-    for entry in entries:
-        hq.append_decision(entry)
-    print(f"Decision log entries appended: {len(entries)}")
-
-    updates, warnings = extract_directive_updates(sections["Directive Updates"], hq.list_departments())
-    for warning in warnings:
+    summary = session.close(ratify_fn=cli_ratify)
+    print(f"Minutes written: {summary['minutes_path']}")
+    print(f"Decision log entries appended: {summary['decisions']}")
+    for dept in summary["directives_updated"]:
+        print(f"Directive updated: {dept}")
+    print(f"Escalations resolved: {summary['escalations_resolved']}")
+    for warning in summary["warnings"]:
         print(f"  Warning: {warning}.")
-    for dept_key, content in updates.items():
-        try:
-            current = hq.read_directive(dept_key)
-        except FileNotFoundError:
-            current = ""
-        change = tier_or_status_changed(current, content) if current else None
-        if change:
-            # Tier/status moves are explicit board decisions — never applied
-            # as a silent side effect of synthesis. The CEO is here: ratify
-            # in so many words, or it doesn't happen.
-            print(f"\nThe synthesized directive for {dept_key} includes a tier/status "
-                  f"change ({change}). Tier changes are explicit board decisions.")
-            if input(f"Ratify this change for {dept_key} now? [y/N] ").strip().lower() != "y":
-                print(f"  Skipped {dept_key} — raise it as its own agenda item when ready.")
-                continue
-        hq.write_directive(dept_key, content)
-        print(f"Directive updated: {dept_key}")
-
-    resolved_body = sections["Resolved Escalations"]
-    resolved_count = 0
-    for m in RESOLVED_LINE_RE.finditer(resolved_body):
-        escalation_id, resolution = m.group(1), m.group(2).strip()
-        try:
-            hq.resolve_escalation(escalation_id, resolution=resolution, decided_by="CEO")
-            resolved_count += 1
-        except ValueError as e:
-            print(f"  Warning: {e} — skipped.")
-    print(f"Escalations resolved: {resolved_count}")
 
 
 def cmd_directive(hq: HQ, llm: LLM, config: BrainConfig, department: str) -> None:

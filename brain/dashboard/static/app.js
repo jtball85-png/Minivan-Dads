@@ -413,6 +413,361 @@ async function checkHealth() {
   }
 }
 
+/* =====================================================================
+   Command bar: #commands, @department consults, plain text = ask.
+   Output renders in the "work session" panel above the tabs.
+   ===================================================================== */
+
+const work = {
+  panel: $("work"), log: $("workLog"), chips: $("workChips"),
+  note: $("workNote"), noteInput: $("noteInput"),
+};
+
+function workShow() { work.panel.style.display = "block"; }
+function workSys(text) {
+  workShow();
+  const s = document.createElement("div");
+  s.className = "sysline";
+  s.textContent = text;
+  work.log.appendChild(s);
+  s.scrollIntoView({ behavior: "smooth", block: "end" });
+}
+function workMsg(speaker, text) {
+  workShow();
+  const isCeo = speaker === "CEO";
+  const isBrain = speaker === "brain";
+  const color = isCeo ? "var(--amber)" : isBrain ? "var(--purple)" : "var(--blue)";
+  const label = isCeo ? "You · CEO" : isBrain ? "Brain · COO" : speaker;
+  const av = isCeo ? "CEO" : isBrain ? "BR" : speaker.slice(0, 2).toUpperCase();
+  const m = document.createElement("div");
+  m.className = "msg" + (isCeo ? " ceoMsg" : "");
+  m.innerHTML = `<div class="av" style="color:${color}">${esc(av)}</div>
+    <div class="b"><div class="who" style="color:${color}">${esc(label)}</div>
+    <div class="tx"></div></div>`;
+  m.querySelector(".tx").textContent = text;
+  work.log.appendChild(m);
+  m.scrollIntoView({ behavior: "smooth", block: "end" });
+  return m.querySelector(".tx");
+}
+function workOk(text) {
+  workShow();
+  const d = document.createElement("div");
+  d.className = "decis";
+  d.textContent = text;
+  work.log.appendChild(d);
+  d.scrollIntoView({ behavior: "smooth", block: "end" });
+}
+function workChipSet(hint, options) {
+  work.chips.innerHTML = hint ? `<span class="hint">${esc(hint)}</span>` : "";
+  options.forEach((o) => {
+    const b = document.createElement("button");
+    if (o.primary) b.className = "primary";
+    b.textContent = o.label;
+    b.onclick = o.go;
+    work.chips.appendChild(b);
+  });
+}
+function workNoteAsk(placeholder) {
+  return new Promise((resolve) => {
+    work.note.style.display = "block";
+    work.noteInput.placeholder = placeholder;
+    work.noteInput.value = "";
+    work.noteInput.focus();
+    $("noteForm").onsubmit = (ev) => {
+      ev.preventDefault();
+      work.note.style.display = "none";
+      resolve(work.noteInput.value.trim());
+    };
+  });
+}
+$("workClear").onclick = (ev) => {
+  ev.preventDefault();
+  work.log.innerHTML = "";
+  work.chips.innerHTML = "";
+  work.panel.style.display = "none";
+};
+
+async function postSSE(url, body, onEvent) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body ?? {}),
+  });
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try { detail = (await response.json()).detail || detail; } catch {}
+    throw new Error(detail);
+  }
+  await readSSE(response, onEvent);
+}
+
+/* ---------- command implementations ---------- */
+
+async function cmdIngest() {
+  workSys("#ingest — reading reports, synthesizing the agenda (a minute or two)…");
+  await postSSE("/api/command/ingest", {}, (e) => {
+    if (e.line) workSys(e.line);
+    if (e.done) {
+      workOk(`✓ agenda written · ${e.decisions} proposed decision(s)`);
+      (e.upgrades || []).forEach((u) =>
+        workSys(`governance upgraded to CEO REQUIRED: ${u.title} (${u.reasons.join("; ")})`));
+      workSys("next: run #meeting to rule on it, or read it on the Dashboard tab.");
+      loadOverview();
+    }
+  });
+}
+
+async function cmdAgent(dept) {
+  workSys(`#agent ${dept} — running the research loop (can take a few minutes)…`);
+  await postSSE("/api/command/agent", { department: dept }, (e) => {
+    if (e.line) workSys(e.line);
+    if (e.done) {
+      workOk(e.exit_code === 0 ? "✓ agent run complete" : "agent run refused (see lines above)");
+      loadOverview(); loadDepartments();
+    }
+  });
+}
+
+async function cmdConsult(dept, message) {
+  workMsg("CEO", `@${dept} ${message}`);
+  const tx = workMsg(dept, "");
+  await postSSE("/api/consult", { department: dept, message }, (e) => {
+    if (e.delta) tx.textContent += e.delta;
+    if (e.done && e.advisory) workSys(`(${dept} is dormant — advisory answer, charter-only)`);
+  });
+}
+
+async function cmdAsk(question) {
+  workMsg("CEO", question);
+  const tx = workMsg("brain", "");
+  let record = null;
+  await postSSE("/api/ask", { question }, (e) => {
+    if (e.delta) tx.textContent += e.delta;
+    if (e.done) record = e.decision_record;
+  });
+  if (record) {
+    workChipSet("the brain drafted a decision record — log it?", [
+      { label: `Log it: ${record.title}`, primary: true, go: async () => {
+          await fetch("/api/ask/log-decision", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(record),
+          });
+          workChipSet("", []);
+          workOk("✓ logged to the decision log");
+          loadOverview();
+        } },
+      { label: "Dismiss", go: () => workChipSet("", []) },
+    ]);
+  }
+}
+
+async function cmdDirective(dept, changes) {
+  workMsg("CEO", `#directive ${dept} — ${changes}`);
+  workSys("drafting the revised directive…");
+  const response = await fetch("/api/command/directive", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ department: dept, changes }),
+  });
+  if (!response.ok) {
+    workSys(`error: ${(await response.json()).detail || response.status}`);
+    return;
+  }
+  const data = await response.json();
+  workMsg("brain", data.response);
+  if (data.board_decision_required) {
+    workSys("that change includes a tier move — it needs a board decision, not a directive edit. Raise it at #meeting or #boardroom.");
+    return;
+  }
+  if (!data.writable) {
+    workSys("no directive block came back — rephrase the ask and try again.");
+    return;
+  }
+  workChipSet(`write this to hq/directives/${dept}.md?`, [
+    { label: "Write it", primary: true, go: async () => {
+        const r = await fetch("/api/command/directive/confirm", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ department: dept }),
+        });
+        workChipSet("", []);
+        if (r.ok) { workOk("✓ directive written"); loadDepartments(); }
+        else workSys(`error: ${(await r.json()).detail || r.status}`);
+      } },
+    { label: "Discard", go: () => { workChipSet("", []); workSys("discarded — nothing written."); } },
+  ]);
+}
+
+/* ---------- the meeting, as a guided flow ---------- */
+
+async function cmdMeeting() {
+  const response = await fetch("/api/meeting/start", { method: "POST" });
+  if (!response.ok) {
+    workSys(`#meeting — ${(await response.json()).detail || response.status}`);
+    return;
+  }
+  const data = await response.json();
+  workSys(`#meeting — board meeting ${data.week} · ${data.items.length} item(s). ` +
+          `Chips rule; typing in the box below discusses the current item with the brain.`);
+  meetingItems = data.items;
+  meetingIndex = 0;
+  meetingShowItem();
+}
+
+let meetingItems = null, meetingIndex = 0;
+
+function meetingShowItem() {
+  const item = meetingItems[meetingIndex];
+  const tagColor = item.tag === "CEO REQUIRED" ? "var(--amber)" : "var(--green)";
+  workShow();
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `<h2>item ${meetingIndex + 1} of ${meetingItems.length} · ` +
+    `<span style="color:${tagColor}">[${esc(item.tag || "UNTAGGED")}]</span></h2>` +
+    `<pre class="doc"></pre>`;
+  card.querySelector("pre").textContent = item.block_text;
+  work.log.appendChild(card);
+  card.scrollIntoView({ behavior: "smooth", block: "end" });
+
+  const rule = (action) => async () => {
+    let note = "";
+    if (action === "modify") note = await workNoteAsk("Your modification/ruling…");
+    if (action === "reject") note = await workNoteAsk("Why (for the record, optional)…");
+    await fetch("/api/meeting/ruling", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ item_id: item.id, action, note }),
+    });
+    workOk(`✓ ${item.title}: ${action.toUpperCase()}${note ? " — " + note : ""}`);
+    meetingIndex++;
+    if (meetingIndex < meetingItems.length) meetingShowItem();
+    else meetingClose({});
+  };
+
+  workChipSet("your ruling — or type below to discuss this item first", [
+    { label: "Approve", primary: true, go: rule("approve") },
+    { label: "Modify", go: rule("modify") },
+    { label: "Reject", go: rule("reject") },
+    { label: "Skip", go: rule("skip") },
+  ]);
+}
+
+async function meetingDiscuss(text) {
+  const item = meetingItems[meetingIndex];
+  workMsg("CEO", text);
+  const tx = workMsg("brain", "…");
+  tx.textContent = "";
+  await postSSE("/api/meeting/discuss", { item_id: item.id, text }, (e) => {
+    if (e.reply) tx.textContent = e.reply;
+  });
+}
+
+async function meetingClose(ratifications) {
+  workSys("meeting over — writing minutes, decisions, and directive updates…");
+  workChipSet("", []);
+  const response = await fetch("/api/meeting/close", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ratifications }),
+  });
+  const data = await response.json();
+
+  if (data.needs_ratification) {
+    const pending = data.needs_ratification[0];
+    workSys(`the records include a tier/status change for ${pending.dept} (${pending.change}) — tier changes are explicit board decisions, never silent.`);
+    workChipSet(`ratify ${pending.dept}: ${pending.change}?`, [
+      { label: `Ratify: ${pending.change}`, primary: true,
+        go: () => meetingClose({ ...ratifications, [pending.dept]: true }) },
+      { label: "Do not ratify (skip that change)",
+        go: () => meetingClose({ ...ratifications, [pending.dept]: false }) },
+    ]);
+    return;
+  }
+
+  meetingItems = null;
+  workOk(`✓ meeting closed · ${data.decisions} decision(s) logged · ` +
+         `${data.directives_updated.length} directive(s) updated · ` +
+         `${data.escalations_resolved} escalation(s) resolved`);
+  (data.warnings || []).forEach((w) => workSys(`warning: ${w}`));
+  loadOverview(); loadDepartments();
+}
+
+/* ---------- parser + dispatch ---------- */
+
+const COMMANDS = {
+  "#help": async () => {
+    const help = await (await fetch("/api/command/help")).json();
+    workSys("commands:");
+    help.forEach((h) => workSys(`  ${h.syntax} — ${h.help}`));
+  },
+  "#status": async () => {
+    document.querySelector('nav button[data-v="home"]').click();
+    await loadOverview();
+    workSys("#status — refreshed. The stat row and inbox above are current.");
+  },
+  "#ingest": cmdIngest,
+  "#meeting": cmdMeeting,
+};
+
+$("cmdBar").onsubmit = async (ev) => {
+  ev.preventDefault();
+  const raw = $("cmdInput").value.trim();
+  if (!raw) return;
+  $("cmdInput").value = "";
+  $("cmdSend").disabled = true;
+  try {
+    // Mid-meeting, plain text discusses the current agenda item.
+    if (meetingItems && !raw.startsWith("#") && !raw.startsWith("@")) {
+      await meetingDiscuss(raw);
+      return;
+    }
+    const [head, ...restParts] = raw.split(/\s+/);
+    const rest = restParts.join(" ");
+    const headLower = head.toLowerCase();
+
+    if (COMMANDS[headLower]) await COMMANDS[headLower]();
+    else if (headLower === "#boardroom") {
+      document.querySelector('nav button[data-v="board"]').click();
+      if (rest) { $("brInput").value = rest; $("brForm").requestSubmit(); }
+      else workSys("#boardroom — type your topic in the Boardroom box.");
+    }
+    else if (headLower === "#agent") {
+      if (!rest) workSys("usage: #agent market_intel");
+      else await cmdAgent(rest.split(/\s+/)[0]);
+    }
+    else if (headLower === "#directive") {
+      const [dept, ...changes] = rest.split(/\s+/);
+      if (!dept || !changes.length) workSys("usage: #directive market_intel <changes in plain English>");
+      else await cmdDirective(dept, changes.join(" "));
+    }
+    else if (headLower.startsWith("#")) {
+      workSys(`unknown command ${head} — try #help`);
+    }
+    else if (headLower.startsWith("@")) {
+      const dept = head.slice(1);
+      if (!rest) workSys(`usage: @${dept} <your question>`);
+      else await cmdConsult(dept, rest);
+    }
+    else await cmdAsk(raw);
+  } catch (err) {
+    workSys(`error: ${err.message}`);
+  } finally {
+    $("cmdSend").disabled = false;
+    $("cmdInput").focus();
+  }
+};
+
+/* live hint line while typing a command */
+$("cmdInput").addEventListener("input", async () => {
+  const v = $("cmdInput").value.trim();
+  const hint = $("cmdHint");
+  if (!v.startsWith("#") && !v.startsWith("@")) { hint.style.display = "none"; return; }
+  if (!window._helpCache) {
+    try { window._helpCache = await (await fetch("/api/command/help")).json(); }
+    catch { return; }
+  }
+  const matches = window._helpCache.filter((h) =>
+    h.command.startsWith(v.split(/\s+/)[0].toLowerCase()) || (v.startsWith("@") && h.command === "@department"));
+  hint.textContent = matches.map((h) => `${h.syntax} — ${h.help}`).join("   ·   ");
+  hint.style.display = matches.length ? "block" : "none";
+});
+
 checkHealth();
 loadOverview();
 loadDepartments();

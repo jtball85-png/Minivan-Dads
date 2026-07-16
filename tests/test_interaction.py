@@ -9,7 +9,8 @@ import pytest
 
 from brain.config import find_repo_root
 from brain.interaction import Exchange, prompt_with_freetext, render_exchanges
-from brain.main import RULING_OPTIONS, _render_rulings, build_parser
+from brain.main import RULING_OPTIONS, build_parser
+from brain.meeting import render_rulings as _render_rulings
 from brain.models import MeetingRuling
 
 

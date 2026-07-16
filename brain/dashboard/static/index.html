@@ -20,6 +20,27 @@
     <button data-v="cmds">Commands</button>
   </nav>
 
+  <form id="cmdBar" class="chatform" autocomplete="off">
+    <input type="text" id="cmdInput"
+           placeholder="Talk to the brain — or #ingest, #meeting, #agent market_intel, @market_intel …  (#help lists everything)">
+    <button type="submit" id="cmdSend">go</button>
+  </form>
+  <div id="cmdHint" class="sysline" style="display:none"></div>
+
+  <section id="work" style="display:none">
+    <div class="card">
+      <h2>work session <button id="workClear" class="back" style="float:right;margin:0">clear ✕</button></h2>
+      <div id="workLog"></div>
+      <div id="workChips" class="chiprow"></div>
+      <div id="workNote" style="display:none">
+        <form id="noteForm" class="chatform">
+          <input type="text" id="noteInput" placeholder="">
+          <button type="submit">record</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <section class="view on" id="home">
     <div class="statrow" id="statRow"></div>
     <div class="card">

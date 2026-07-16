@@ -41,6 +41,37 @@ def slugify(topic: str, max_len: int = 40) -> str:
     return slug[:max_len].rstrip("-") or "topic"
 
 
+def participant_blocks(config: BrainConfig, hq: HQ, prompt_file: str,
+                       dept: str, advisory: bool) -> list[dict]:
+    """A department head's context: block 1 (cached) = instructions +
+    charter + tiers; block 2 = that department's directive + last 2 reports,
+    or the advisory flag when dormant. Shared by boardroom participants and
+    standalone @department consults."""
+    static = "\n\n---\n\n".join([
+        (config.prompts_root / prompt_file).read_text(encoding="utf-8"),
+        f"You are the head of the **{dept}** department.",
+        hq.read_company_charter(),
+        hq.read_tiers(),
+    ])
+    if advisory:
+        dynamic = (
+            "You are DORMANT: you have no directive and no reports yet. You are "
+            "here in an advisory capacity — reason from the charter alone, and "
+            "say so plainly when your lack of operating data limits your view."
+        )
+    else:
+        parts = [f"### Your standing directive\n\n{hq.read_directive(dept)}"]
+        for week in (hq.previous_week_key(), hq.current_week_key()):
+            report = hq.read_report(dept, week)
+            if report:
+                parts.append(f"### Your report — {week}\n\n{report}")
+        dynamic = "\n\n".join(parts)
+    return [
+        {"type": "text", "text": static, "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": dynamic},
+    ]
+
+
 @dataclass
 class Participant:
     department: str
@@ -73,31 +104,10 @@ class BoardroomSession:
         return (self.config.prompts_root / filename).read_text(encoding="utf-8")
 
     def _participant_blocks(self, participant: Participant) -> list[dict]:
-        """Block 1 (cached): participant instructions + charter + tiers.
-        Block 2: that department's own context — or the advisory flag."""
-        static = "\n\n---\n\n".join([
-            self._read_prompt("boardroom_participant.md"),
-            f"You are the head of the **{participant.department}** department.",
-            self.hq.read_company_charter(),
-            self.hq.read_tiers(),
-        ])
-        if participant.advisory:
-            dynamic = (
-                "You are DORMANT: you have no directive and no reports yet. You are "
-                "here in an advisory capacity — reason from the charter alone, and "
-                "say so plainly when your lack of operating data limits your view."
-            )
-        else:
-            parts = [f"### Your standing directive\n\n{self.hq.read_directive(participant.department)}"]
-            for week in (self.hq.previous_week_key(), self.hq.current_week_key()):
-                report = self.hq.read_report(participant.department, week)
-                if report:
-                    parts.append(f"### Your report — {week}\n\n{report}")
-            dynamic = "\n\n".join(parts)
-        return [
-            {"type": "text", "text": static, "cache_control": {"type": "ephemeral"}},
-            {"type": "text", "text": dynamic},
-        ]
+        return participant_blocks(
+            self.config, self.hq, "boardroom_participant.md",
+            participant.department, participant.advisory,
+        )
 
     def _moderator_blocks(self) -> list[dict]:
         static = "\n\n---\n\n".join([
