@@ -185,7 +185,9 @@ $("askForm").onsubmit = async (ev) => {
     });
     if (record) offerDecisionLog(record);
   } catch (err) {
-    tx.textContent += `\n[error: ${err.message} — is the API key set? Chat needs it; the rest of the console doesn't.]`;
+    tx.textContent += err.message.includes("404")
+      ? "\n[chat isn't loaded on this server — stop the dashboard (Ctrl-C) and run `brain dashboard` again from the project; its startup line should say 'chat enabled'.]"
+      : `\n[error: ${err.message}]`;
   } finally {
     $("askSend").disabled = false;
     input.focus();

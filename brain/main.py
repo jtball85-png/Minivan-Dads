@@ -16,7 +16,7 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-from brain.config import BrainConfig, load_config
+from brain.config import BrainConfig, find_repo_root, load_config
 from brain.governance import DECISION_HEADING_RE, apply_governance
 from brain.hq import HQ
 from brain.interaction import Exchange, prompt_with_freetext, render_exchanges
@@ -651,7 +651,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def cli() -> None:
-    load_dotenv()
+    # Load the repo root's .env regardless of the current directory — the
+    # console script runs from anywhere, and a silently missing API key
+    # downgrades the dashboard to read-only in a way that's easy to miss.
+    try:
+        load_dotenv(find_repo_root() / ".env")
+    except FileNotFoundError:
+        load_dotenv()
 
     parser = build_parser()
     args = parser.parse_args()
