@@ -11,16 +11,18 @@ dependencies = [
     "anthropic>=0.40",
     "python-dotenv",
     "PyYAML",
+    "fastapi",
+    "uvicorn",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "httpx"]
 
 [project.scripts]
 brain = "brain.main:cli"
 
 [tool.setuptools]
-packages = ["brain", "brain.actions"]
+packages = ["brain", "brain.actions", "brain.dashboard"]
 
 [tool.setuptools.package-data]
-brain = ["prompts/*.md", "config.yaml"]
+brain = ["prompts/*.md", "config.yaml", "dashboard/static/*"]

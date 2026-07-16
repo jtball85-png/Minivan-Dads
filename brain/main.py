@@ -418,6 +418,21 @@ def cmd_boardroom(hq: HQ, llm: LLM, config: BrainConfig, topic: str,
         print(f"  Warning: {warning}.")
 
 
+def cmd_dashboard(hq: HQ, config: BrainConfig, host: str, port: int) -> None:
+    # Lazy imports: `brain status` should never pay the FastAPI import, and
+    # a missing dependency should fail with instructions, not a stack trace.
+    try:
+        import uvicorn
+        from brain.dashboard.app import create_app
+    except ImportError:
+        print("Dashboard dependencies missing — run: .venv/Scripts/pip install -e \".[dev]\"")
+        return
+
+    app = create_app(config, hq)
+    print(f"CEO console: http://{host}:{port}  (Ctrl-C to stop)")
+    uvicorn.run(app, host=host, port=port, log_level="warning")
+
+
 def cmd_rollback(hq: HQ, config: BrainConfig, action_id: str) -> None:
     from brain.actions.limits import load_capabilities, load_limits
     from brain.actions.registry import REGISTRY
@@ -583,6 +598,29 @@ def build_parser() -> argparse.ArgumentParser:
     )
     rollback_parser.add_argument("action_id", help="The action id from hq/actions/log.jsonl")
 
+    dashboard_parser = subparsers.add_parser(
+        "dashboard",
+        help="Serve the CEO console (local web view over HQ)",
+        formatter_class=fmt,
+        description=(
+            "Serves a local, read-only web console that live-reads HQ — a view,\n"
+            "not a second source of truth. Four tabs:\n"
+            "  Dashboard   - stat row, escalation inbox, recent decisions,\n"
+            "                this week's agenda\n"
+            "  Departments - card grid with per-department drill-down: directive,\n"
+            "                latest report, actions taken, directive git history\n"
+            "  Boardroom   - past debate transcripts (live boardroom arrives in a\n"
+            "                later increment)\n"
+            "  Commands    - this CLI reference, generated from --help so it\n"
+            "                never drifts\n\n"
+            "Binds to localhost only. No auth (v1). Holds no state of its own —\n"
+            "anything visible corresponds to a file in hq/ you can read in git."
+        ),
+        epilog="Example: brain dashboard --port 8712",
+    )
+    dashboard_parser.add_argument("--host", default="127.0.0.1", help="Bind address (default 127.0.0.1)")
+    dashboard_parser.add_argument("--port", type=int, default=8712, help="Port (default 8712)")
+
     return parser
 
 
@@ -616,6 +654,8 @@ def cli() -> None:
                       depts=args.depts)
     elif args.command == "rollback":
         cmd_rollback(hq, config, args.action_id)
+    elif args.command == "dashboard":
+        cmd_dashboard(hq, config, args.host, args.port)
 
 
 if __name__ == "__main__":

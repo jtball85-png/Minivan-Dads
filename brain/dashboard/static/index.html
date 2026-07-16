@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minivan Dads — CEO Console</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>MINIVAN <b>DADS</b> · CEO CONSOLE</h1>
+    <span class="sub" id="headerSub">loading…</span>
+  </header>
+
+  <nav>
+    <button class="on" data-v="home">Dashboard</button>
+    <button data-v="depts">Departments</button>
+    <button data-v="board">Boardroom</button>
+    <button data-v="cmds">Commands</button>
+  </nav>
+
+  <section class="view on" id="home">
+    <div class="statrow" id="statRow"></div>
+    <div class="card">
+      <h2>Escalation inbox</h2>
+      <div id="escalations"><span class="dim">loading…</span></div>
+    </div>
+    <div class="card">
+      <h2>Recent decisions</h2>
+      <div id="decisions"><span class="dim">loading…</span></div>
+    </div>
+    <div class="card">
+      <h2>This week, from the brain</h2>
+      <div id="agenda"><span class="dim">loading…</span></div>
+    </div>
+    <div class="card chat-placeholder">
+      <h2>Ask the brain</h2>
+      <input type="text" disabled placeholder="brain ask — coming online in the next increment. Use the CLI for now.">
+    </div>
+  </section>
+
+  <section class="view" id="depts">
+    <div id="deptGrid" class="grid"></div>
+    <div id="deptDetail" style="display:none"></div>
+  </section>
+
+  <section class="view" id="board">
+    <div class="card">
+      <h2>Boardroom transcripts</h2>
+      <div class="dim" style="font-size:12px;margin-bottom:10px">
+        Past debates, read from HQ. Live boardroom-in-dashboard arrives in a
+        later increment — convene one now with:
+        <code>brain boardroom "&lt;topic&gt;"</code>
+      </div>
+      <div id="boardList"></div>
+    </div>
+    <div id="boardDetail"></div>
+    <div class="card chat-placeholder">
+      <h2>Open a topic</h2>
+      <input type="text" disabled placeholder="Live boardroom — coming online in a later increment.">
+    </div>
+  </section>
+
+  <section class="view" id="cmds">
+    <div class="card">
+      <h2>CLI reference — generated live from brain --help</h2>
+      <div id="cmdList"><span class="dim">loading…</span></div>
+    </div>
+  </section>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

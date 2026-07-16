@@ -156,6 +156,14 @@ class HQ:
             return None
         return path.read_text(encoding="utf-8")
 
+    def latest_report_week(self, dept: str) -> str | None:
+        """Newest week-keyed report filename for a department, or None."""
+        reports_dir = self._reports_dir(dept)
+        if not reports_dir.exists():
+            return None
+        weeks = [p.stem for p in reports_dir.glob("*.md") if WEEK_KEY_RE.match(p.stem)]
+        return max(weeks, key=_parse_week_key) if weeks else None
+
     def reports_status(self, week_key: str | None = None) -> dict[str, ReportStatus]:
         week_key = week_key or self.current_week_key()
         status: dict[str, ReportStatus] = {}
