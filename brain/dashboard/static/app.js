@@ -383,6 +383,37 @@ async function brRule(ruling, ratifications) {
   loadOverview();
 }
 
+/* ---------- health check: never let chat fail silently ---------- */
+async function checkHealth() {
+  let problem = null;
+  try {
+    const response = await fetch("/api/health");
+    if (!response.ok) {
+      // A server without /api/health predates this build entirely.
+      problem = "This server is running an OLD version of the console.";
+    } else {
+      const h = await response.json();
+      if (!h.chat) problem = "Chat failed to start — the console is read-only right now.";
+    }
+  } catch {
+    return; // server unreachable — the page itself won't have loaded anyway
+  }
+  if (problem) {
+    const banner = document.createElement("div");
+    banner.className = "card";
+    banner.style.borderColor = "var(--coral)";
+    banner.innerHTML =
+      `<h2 style="color:var(--coral)">restart needed</h2>
+       <div style="font-size:12px">${problem} Close the "Minivan Dads HQ" ` +
+      `window on your taskbar (or restart your PC), double-click ` +
+      `<code>Minivan Dads HQ.bat</code> again, and refresh this page. If it ` +
+      `persists, <code>dashboard_startup.log</code> in the project folder ` +
+      `says exactly what went wrong — paste it to Claude Code.</div>`;
+    document.querySelector(".app").insertBefore(banner, document.querySelector("nav"));
+  }
+}
+
+checkHealth();
 loadOverview();
 loadDepartments();
 loadBoardroom();

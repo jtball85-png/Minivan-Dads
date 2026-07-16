@@ -430,14 +430,27 @@ def cmd_dashboard(hq: HQ, config: BrainConfig, host: str, port: int) -> None:
 
     app = create_app(config, hq)
 
-    # Chat surfaces need the model; the read-only view must work without it.
+    # Chat surfaces need the model; the read-only view must work without it —
+    # but a chat failure must be LOUD: full traceback to the console AND to
+    # dashboard_startup.log, plus /api/health so the UI can show a banner.
+    import traceback
+
+    chat_error: str | None = None
     try:
         from brain.dashboard.chat import register_chat_routes
         register_chat_routes(app, config, hq, make_llm=lambda: LLM(config))
-        chat_note = "chat enabled"
-    except Exception as e:
-        chat_note = f"chat disabled ({e})"
+    except Exception:
+        chat_error = traceback.format_exc()
+        log_path = hq.root.parent / "dashboard_startup.log"
+        log_path.write_text(
+            f"Chat routes failed to register — the console is read-only.\n\n{chat_error}",
+            encoding="utf-8",
+        )
+        print(f"!! CHAT DISABLED — details in {log_path}\n{chat_error}")
 
+    app.state.chat_error = chat_error
+
+    chat_note = "chat enabled" if chat_error is None else "CHAT DISABLED — see dashboard_startup.log"
     print(f"CEO console: http://{host}:{port}  ({chat_note}; Ctrl-C to stop)")
     uvicorn.run(app, host=host, port=port, log_level="warning")
 
