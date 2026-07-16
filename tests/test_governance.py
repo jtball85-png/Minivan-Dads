@@ -93,6 +93,55 @@ def test_upgrade_reasons_are_additive_when_both_mechanisms_fire():
     assert any("keyword" in r for r in enforced.reasons)
 
 
+def _block(title: str, recommendation: str) -> str:
+    return (
+        f"#### Decision: {title}\n"
+        f"- Recommendation: {recommendation}\n"
+        f"- Checklist: money=no, brand=no, legal=no, irreversible=no\n"
+        f"- Tag: [BRAIN DECIDES]\n"
+    )
+
+
+def test_tier_change_keywords_force_upgrade():
+    block = _block(
+        "Promote market_intel",
+        "Promote the department to Tier 2 given six weeks of clean reports.",
+    )
+    enforced = enforce_tier(parse_decision_blocks(block)[0])
+    assert enforced.final_tag == CEO_REQUIRED
+    assert any("tier_change" in r for r in enforced.reasons)
+
+
+def test_publish_and_account_creation_keywords_force_upgrade():
+    for rec in (
+        "Publish the launch post directly to Instagram.",
+        "Create a TikTok Shop account for the brand.",
+    ):
+        enforced = enforce_tier(parse_decision_blocks(_block("External action", rec))[0])
+        assert enforced.final_tag == CEO_REQUIRED, rec
+
+
+def test_bare_logo_and_pricing_keywords_force_upgrade():
+    for rec in (
+        "Update the logo colorway for the fall drop.",
+        "Set the tee price at $24 for the launch window.",
+    ):
+        enforced = enforce_tier(parse_decision_blocks(_block("Brand tweak", rec))[0])
+        assert enforced.final_tag == CEO_REQUIRED, rec
+
+
+def test_ordinary_operational_prose_does_not_false_positive():
+    # Real phrasing from the W29 acceptance-test agenda — must stay BRAIN DECIDES.
+    block = _block(
+        "Expand market_intel standing watch list",
+        "Approve adding Amazon Merch and TikTok Shop to the watch list; "
+        "expanding scope addresses staling data directly with no cost or risk.",
+    )
+    enforced = enforce_tier(parse_decision_blocks(block)[0])
+    assert enforced.final_tag == BRAIN_DECIDES
+    assert enforced.upgraded is False
+
+
 def test_apply_governance_handles_multiple_blocks_independently():
     markdown = CLEAN_BLOCK + "\n" + CHECKLIST_YES_BLOCK
     corrected, results = apply_governance(markdown)

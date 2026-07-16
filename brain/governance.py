@@ -31,15 +31,31 @@ REASON_LINE_RE = re.compile(r"^- Reason:.*$", re.MULTILINE)
 CEO_REQUIRED = "CEO REQUIRED"
 BRAIN_DECIDES = "BRAIN DECIDES"
 
+# Keep patterns specific enough not to trip on ordinary agenda prose —
+# e.g. "no cost or risk" appeared in a legitimate [BRAIN DECIDES] item, so
+# broad words like "cost" or "risk" stay out. A false positive here is safe
+# (the CEO just reviews one extra item) but erodes trust if it's constant.
 FORCE_CEO_KEYWORDS: dict[str, list[str]] = {
     "spend": [r"\bspend\b", r"\bspending\b", r"\bbudget\b", r"\bpurchase\b", r"\binvoice\b",
-              r"\bad spend\b", r"\$\d", r"\bprice increase\b", r"\bpayment\b"],
-    "brand": [r"\brebrand\b", r"\bnew logo\b", r"\brename\b", r"\btagline\b",
-              r"\bbrand name\b", r"\bbrand voice\b", r"\blogo change\b"],
+              r"\bad spend\b", r"\$\d", r"\bpric(e|es|ing)\b", r"\bpayment\b",
+              r"\bsubscription\b", r"\bhir(e|ing)\b", r"\bfee\b", r"\brefund\b",
+              r"\bdiscount\b"],
+    "brand": [r"\brebrand\b", r"\blogo\b", r"\brename\b", r"\btagline\b", r"\bslogan\b",
+              r"\bbrand name\b", r"\bbrand voice\b", r"\bbrand identity\b",
+              r"\bvisual identity\b", r"\bmascot\b"],
     "legal": [r"\btrademark\b", r"\bcontract\b", r"\blegal\b", r"\bcopyright\b",
-              r"\bterms of service\b", r"\blawsuit\b", r"\bcease and desist\b"],
+              r"\bterms of service\b", r"\blawsuit\b", r"\bcease and desist\b",
+              r"\blicens(e|es|ing)\b", r"\bnda\b", r"\bliability\b",
+              r"\bincorporat(e|ion)\b", r"\bllc\b"],
     "irreversible": [r"\bdelete\b", r"\bpermanently\b", r"\bterminate\b",
-                      r"\bclose the shop\b", r"\bcancel\b.*\baccount\b", r"\birreversible\b"],
+                      r"\bclose the shop\b", r"\bcancel\b.*\baccount\b", r"\birreversible\b",
+                      r"\bshut down\b", r"\bdiscontinue\b", r"\bwipe\b", r"\bpurge\b",
+                      r"\bpublish\b", r"\bnew account\b", r"\bopen(ing)? an account\b",
+                      r"\bcreate\b[^.]{0,40}\baccount\b"],
+    # Tier changes are board decisions, never brain rulings (roadmap
+    # standing rule: promotions are earned in the decision log).
+    "tier_change": [r"\btier [0-3]\b", r"\btier (promotion|change|upgrade|demotion)\b",
+                     r"\bpromot(e|ed|ion)\b[^.]{0,40}\btier\b"],
 }
 
 
