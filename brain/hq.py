@@ -156,6 +156,12 @@ class HQ:
             return None
         return path.read_text(encoding="utf-8")
 
+    def write_report(self, dept: str, week_key: str, content: str) -> Path:
+        path = self.report_path(dept, week_key)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        return path
+
     def latest_report_week(self, dept: str) -> str | None:
         """Newest week-keyed report filename for a department, or None."""
         reports_dir = self._reports_dir(dept)

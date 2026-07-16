@@ -1,0 +1,48 @@
+# Market Intel agent — the company's first live department (Phase 2).
+#
+# Runs Thursday night US Central (02:00 UTC Friday = 9pm CDT / 8pm CST
+# Thursday) so the report is on file for the CEO's Friday-morning
+# `brain ingest`. Also runnable on demand from the Actions tab.
+#
+# One-time setup (CEO): repo Settings -> Secrets and variables -> Actions ->
+# New repository secret: ANTHROPIC_API_KEY.
+
+name: market-intel-agent
+
+on:
+  schedule:
+    - cron: "0 2 * * 5"   # Friday 02:00 UTC = Thursday night US Central
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Run the agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m brain agent market_intel
+
+      - name: Commit the report
+        run: |
+          git config user.name "market-intel-agent"
+          git config user.email "agent@minivan-dads.invalid"
+          git add hq/reports/ hq/escalations/
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit."
+          else
+            git commit -m "Market Intel weekly report ($(date -u +%Y-%m-%d))"
+            git push
+          fi

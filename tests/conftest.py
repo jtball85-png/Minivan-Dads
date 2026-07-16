@@ -33,7 +33,7 @@ def config(tmp_hq_root):
             "ask": 4096, "ingest": 8192, "meeting": 8192, "directive": 4096,
             "discussion": 1024, "boardroom_position": 600,
             "boardroom_moderator": 800, "boardroom_floor": 1500,
-            "boardroom_synthesis": 8192,
+            "boardroom_synthesis": 8192, "agent": 8192,
         },
         effort={"ask": "medium", "ingest": "high", "meeting": "high", "directive": "medium"},
         hq_root=tmp_hq_root,

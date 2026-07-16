@@ -46,6 +46,7 @@ class BrainConfig:
     prompts_root: Path
     stale_directive_days: int
     decision_log_recent_n: int
+    agent_max_searches: int = 8
     departments: dict[str, DepartmentConfig] = field(default_factory=dict)
 
     def department_names(self) -> list[str]:
@@ -81,5 +82,6 @@ def load_config(path: Path | None = None, repo_root: Path | None = None) -> Brai
         prompts_root=root / raw["paths"]["prompts_root"],
         stale_directive_days=raw["stale_directive_days"],
         decision_log_recent_n=raw["decision_log_recent_n"],
+        agent_max_searches=raw.get("agent_max_searches", 8),
         departments=departments,
     )

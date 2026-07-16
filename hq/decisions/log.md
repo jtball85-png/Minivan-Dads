@@ -48,3 +48,8 @@ Format per entry:
 - Rationale: The badge-as-business thesis (creative) justified the collectibility upside, while finance's insistence on a real quoted per-unit cost before any spend commitment was honored as a gate rather than overridden — the CEO approved the card only once bounded to a cost cap and scoped to the first drop, consistent with the charter's conservative-spending pillar and the CEO-only spend guardrail. The decision will be revisited at the first monthly review rather than treated as a permanent packaging default. Dissents: none
 - Decided by: CEO
 - Affected departments: creative, finance
+
+## 2026-07-16 — Phase 2 launched: market_intel activated as the first live agent
+- Rationale: Phase 1 acceptance criteria passed (brief section 9) and the CEO ordered Phase 2 per the roadmap. market_intel moves dormant -> active at Tier 0 (read-only research), with the watch list consolidated into its directive: DadBod Apparel, Dad Gang, Etsy, Amazon Merch, TikTok Shop, Reddit dad-humor, seasonal moments, and any minivan-adjacent design. Scheduled weekly via GitHub Actions, Thursday night, so reports are on file for Friday-morning ingest.
+- Decided by: CEO
+- Affected departments: market_intel

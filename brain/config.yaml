@@ -12,6 +12,10 @@ max_tokens:
   boardroom_moderator: 1500
   boardroom_floor: 3000
   boardroom_synthesis: 8192
+  agent: 8192
+
+# How many web searches a department agent may burn per scheduled run.
+agent_max_searches: 8
 
 effort:
   ask: medium
@@ -30,7 +34,7 @@ decision_log_recent_n: 20
 departments:
   - name: market_intel
     tier: 0
-    status: dormant
+    status: active   # activated 2026-07-16 (Phase 2 launch, CEO decision — see decision log)
     report_cadence: weekly
   - name: creative
     tier: 0

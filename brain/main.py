@@ -607,6 +607,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     rollback_parser.add_argument("action_id", help="The action id from hq/actions/log.jsonl")
 
+    agent_parser = subparsers.add_parser(
+        "agent",
+        help="Run a department agent's scheduled loop once",
+        formatter_class=fmt,
+        description=(
+            "Executes one run of a department agent (Phase 2+): load its\n"
+            "directive -> load its last report (memory) -> research via web\n"
+            "search -> write hq/reports/{dept}/{week}.md -> file any escalations\n"
+            "-> exit. Dormant or suspended departments exit immediately.\n\n"
+            "This is what the scheduler calls (GitHub Actions, Thursday night);\n"
+            "run it by hand to test a directive change without waiting a week.\n"
+            "Blast radius of a bad run: one bad report."
+        ),
+        epilog="Example: brain agent market_intel",
+    )
+    agent_parser.add_argument("department", help="Department name (e.g. market_intel)")
+
     dashboard_parser = subparsers.add_parser(
         "dashboard",
         help="Serve the CEO console (local web view over HQ)",
@@ -665,6 +682,9 @@ def cli() -> None:
         cmd_rollback(hq, config, args.action_id)
     elif args.command == "dashboard":
         cmd_dashboard(hq, config, args.host, args.port)
+    elif args.command == "agent":
+        from brain.agent import run_agent
+        raise SystemExit(run_agent(args.department, config, hq, LLM(config)))
 
 
 if __name__ == "__main__":

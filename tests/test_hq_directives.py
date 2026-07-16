@@ -40,13 +40,20 @@ def test_write_and_read_directive_roundtrip(hq):
     assert hq.read_directive("market_intel") == "directive content"
 
 
-def test_config_loader_produces_all_eight_departments_dormant():
+def test_config_loader_produces_all_eight_departments():
     from brain.config import load_config
 
     config = load_config()
 
     assert len(config.departments) == 8
-    assert all(d.status == "dormant" for d in config.departments.values())
+    # Phase 2: market_intel is live; everything else stays dormant until
+    # its phase (roadmap). Update this test at each activation — it's the
+    # tripwire against accidental activations.
+    assert config.departments["market_intel"].status == "active"
+    assert all(
+        d.status == "dormant"
+        for name, d in config.departments.items() if name != "market_intel"
+    )
     expected = {
         "market_intel", "creative", "content", "product",
         "storefront", "customer", "paid_ads", "finance",
