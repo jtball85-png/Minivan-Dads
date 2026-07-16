@@ -53,3 +53,18 @@ Format per entry:
 - Rationale: Phase 1 acceptance criteria passed (brief section 9) and the CEO ordered Phase 2 per the roadmap. market_intel moves dormant -> active at Tier 0 (read-only research), with the watch list consolidated into its directive: DadBod Apparel, Dad Gang, Etsy, Amazon Merch, TikTok Shop, Reddit dad-humor, seasonal moments, and any minivan-adjacent design. Scheduled weekly via GitHub Actions, Thursday night, so reports are on file for Friday-morning ingest.
 - Decided by: CEO
 - Affected departments: market_intel
+
+## 2026-07-16 — Confirm "Minivan Dads" as the brand name
+- Rationale: Every department (market_intel, creative, product, finance) independently concluded no competing name/mark exists — only diffuse descriptive marketplace noise — and the charter's mission explicitly commits to owning the "minivan dad" identity as the strategic asset itself. The CEO accepted this as settled and closed the positioning/rebrand question raised mid-debate, treating it as a deliberate narrow-wedge strategy rather than exclusionary drift. Dissents: none
+- Decided by: CEO
+- Affected departments: market_intel, creative, product, finance
+
+## 2026-07-16 — Defer trademark filing pending diligence
+- Rationale: The CEO chose to hold the filing trigger rather than file immediately, citing limited startup budget and a preference to validate the name/store/merch with early sales before committing legal spend — a discretionary capital-allocation call reserved to the CEO under the charter. The filing decision is explicitly parked, not abandoned: it will be revisited once market_intel's handle/domain-and-registrability report and a fast intent-to-use cost check are in hand, at the next board meeting. Dissents: market_intel (found zero name-collision evidence and argued the open exposure window should be closed by filing now); creative (holds unfiled exposure as the "failure to protect the brand" risk the charter calls unacceptable); product (warned that continued creative/design investment without a filed mark compounds design-debt risk); finance (argued delay is unbounded, compounding risk versus a bounded, known filing cost, and pushed to file immediately)
+- Decided by: CEO
+- Affected departments: market_intel, finance, creative, product
+
+## 2026-07-16 — Dispatch market_intel handle/domain and registrability diligence
+- Rationale: To inform the filing-timing decision without spending money, the CEO approved a narrow, fast-turnaround task: check @minivandads and close variants across relevant platforms plus .com/.co/.shop, distinguish squatted-dead from active-and-relevant conflicts, produce a ranked list of on-voice backup variants (explicitly rejecting generic "official/hq/numbers" filler), and sharpen the registrability-posture note for counsel ahead of any future filing. Creative is looped in briefly to sanity-check that variants still sound like something a minivan dad would wear. Dissents: none
+- Decided by: CEO
+- Affected departments: market_intel, creative
