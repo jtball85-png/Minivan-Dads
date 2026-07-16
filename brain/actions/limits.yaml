@@ -1,0 +1,27 @@
+# Per-agent allowlists and bounds — enforced in code by the executor.
+# THIS FILE IS HUMAN-OWNED. The machine never writes here. Earned capability
+# modes (dry-run / supervised / auto) live in hq/actions/capabilities.yaml,
+# which the executor maintains; this file says what is allowed AT ALL and
+# within what bounds. An action absent from an agent's allowed_actions is
+# rejected regardless of capability mode.
+#
+# Seeded from the action-layer spec §4. All agents are dormant in Phase 1 —
+# nothing here is live until its phase and its capability ladder say so.
+
+storefront:
+  allowed_actions: [shopify.update_listing_copy, shopify.update_listing_images]
+  bounds:
+    shopify.set_price: { max_change_pct: 10, requires: escalation }   # not allowed yet
+    max_actions_per_day: 10
+
+paid_ads:
+  allowed_actions: [meta.adjust_budget, meta.pause_adset]
+  bounds:
+    meta.adjust_budget: { weekly_total_cap_usd: 50, max_single_change_usd: 15 }
+    meta.create_campaign: { requires: escalation }
+
+content:
+  allowed_actions: [meta.publish_post]
+  bounds:
+    max_posts_per_day: 2
+    publish_window: "06:00-21:00 CEO timezone"

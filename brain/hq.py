@@ -10,12 +10,14 @@ requirement.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from dataclasses import replace
 from datetime import date, timedelta
 from pathlib import Path
 
+from brain.actions.models import ActionRecord
 from brain.config import BrainConfig
 from brain.models import DecisionEntry, EscalationItem, ReportEntry, ReportStatus
 
@@ -358,6 +360,76 @@ class HQ:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
         return path
+
+    # ------------------------------------------------------------------
+    # Action log + snapshots (action layer)
+    # ------------------------------------------------------------------
+
+    def actions_log_path(self) -> Path:
+        return self.root / "actions" / "log.jsonl"
+
+    def append_action(self, record: ActionRecord) -> None:
+        """Append one JSONL line. Like the decision log, this file is
+        append-only: 'a' mode is the only mode ever used on it."""
+
+        path = self.actions_log_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a", encoding="utf-8", newline="\n") as f:
+            f.write(json.dumps(record.to_json_dict()) + "\n")
+
+    def read_actions(self, since: date | None = None) -> list[ActionRecord]:
+        """Current state per action id: lines are grouped by id and the last
+        line wins (an action's lifecycle is multiple appended lines). Returns
+        records in first-seen id order, filtered by `since` (timestamp date)."""
+
+        path = self.actions_log_path()
+        if not path.exists():
+            return []
+
+        latest: dict[str, ActionRecord] = {}
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            record = ActionRecord.from_json_dict(json.loads(line))
+            latest[record.id] = record  # dict preserves first-seen order; value updates
+
+        records = list(latest.values())
+        if since is not None:
+            records = [r for r in records if date.fromisoformat(r.timestamp[:10]) >= since]
+        return records
+
+    def snapshot_path(self, action_id: str) -> Path:
+        return self.root / "actions" / "snapshots" / f"{action_id}.json"
+
+    def write_snapshot(self, action_id: str, data: dict) -> Path:
+
+        path = self.snapshot_path(action_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write(path, json.dumps(data, indent=2))
+        return path
+
+    def read_snapshot(self, action_id: str) -> dict:
+
+        return json.loads(self.snapshot_path(action_id).read_text(encoding="utf-8"))
+
+    def next_action_id(self, as_of: date | None = None) -> str:
+        week = self.current_week_key(as_of)
+        existing = [r.id for r in self.read_actions() if r.id.startswith(f"ACT-{week}-")]
+        seq = 1
+        if existing:
+            seq = max(int(i.rsplit("-", 1)[1]) for i in existing) + 1
+        return f"ACT-{week}-{seq:04d}"
+
+    def action_stats(self, days: int = 7, as_of: date | None = None) -> dict[str, dict[str, int]]:
+        """Per-agent counts of final states within the window — the status
+        dashboard's Actions section."""
+        cutoff = (as_of or date.today()) - timedelta(days=days)
+        stats: dict[str, dict[str, int]] = {}
+        for record in self.read_actions(since=cutoff):
+            agent_stats = stats.setdefault(record.agent, {})
+            agent_stats[record.result] = agent_stats.get(record.result, 0) + 1
+        return stats
 
     def last_meeting_date(self) -> date | None:
         meetings_dir = self._meetings_dir()

@@ -89,6 +89,23 @@ def cmd_status(hq: HQ) -> None:
     else:
         print("\nStale directives: none")
 
+    stats = hq.action_stats(days=7)
+    print("\nActions (last 7 days):")
+    if not stats:
+        print("  none logged")
+    else:
+        for agent, counts in stats.items():
+            parts = ", ".join(f"{result}: {n}" for result, n in sorted(counts.items()))
+            print(f"  {agent:<15} {parts}")
+        rejected = [
+            r for r in hq.read_actions()
+            if r.result == "rejected"
+        ][-5:]
+        if rejected:
+            print("  Recent rejections:")
+            for r in rejected:
+                print(f"    {r.id} {r.action_type}: {'; '.join(r.reasons)}")
+
 
 def cmd_ask(hq: HQ, llm: LLM, config: BrainConfig, question: str) -> None:
     system_blocks = build_system_blocks(config, hq, "ask.md")
@@ -392,6 +409,27 @@ def cmd_directive(hq: HQ, llm: LLM, config: BrainConfig, department: str) -> Non
         print("Not written. (To refine it, run `brain directive` again with the adjusted ask.)")
 
 
+def cmd_rollback(hq: HQ, config: BrainConfig, action_id: str) -> None:
+    from brain.actions.limits import load_capabilities, load_limits
+    from brain.actions.registry import REGISTRY
+    from brain.executor import Executor
+
+    executor = Executor(
+        hq=hq,
+        registry=REGISTRY,
+        limits=load_limits(registry=REGISTRY),
+        capabilities=load_capabilities(hq.root / "actions" / "capabilities.yaml"),
+        connectors={},  # no live connectors until Phase 2+
+    )
+    try:
+        record = executor.rollback(action_id)
+    except ValueError as e:
+        print(f"Cannot roll back: {e}")
+        return
+    print(f"Rolled back {record.id} ({record.action_type} by {record.agent}).")
+    print("Capability demoted one rung; an escalation was filed for the next meeting.")
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the CLI parser. Pure and importable — the dashboard's Commands
     tab is generated from this parser so the reference can never drift."""
@@ -493,6 +531,24 @@ def build_parser() -> argparse.ArgumentParser:
     )
     directive_parser.add_argument("department", help="Department name (e.g. market_intel)")
 
+    rollback_parser = subparsers.add_parser(
+        "rollback",
+        help="Restore the pre-action snapshot for an executed action",
+        formatter_class=fmt,
+        description=(
+            "Restores the state captured before an executed action ran, via the\n"
+            "same connector that ran it. The rollback is logged, and the agent's\n"
+            "capability for that action type is automatically demoted one rung on\n"
+            "the ladder (auto -> supervised -> dry-run) and raised at the next\n"
+            "board meeting.\n\n"
+            "Cannot restore: dry-run intents (nothing executed), actions marked\n"
+            "irreversible in the registry (published posts, sent emails), or\n"
+            "actions with no snapshot."
+        ),
+        epilog="Example: brain rollback ACT-2026-W31-0004",
+    )
+    rollback_parser.add_argument("action_id", help="The action id from hq/actions/log.jsonl")
+
     return parser
 
 
@@ -519,6 +575,8 @@ def cli() -> None:
     elif args.command == "directive":
         llm = LLM(config)
         cmd_directive(hq, llm, config, args.department)
+    elif args.command == "rollback":
+        cmd_rollback(hq, config, args.action_id)
 
 
 if __name__ == "__main__":
