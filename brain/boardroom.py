@@ -188,10 +188,11 @@ class BoardroomSession:
         self.print_fn(f"Convening: {roster}")
         return True
 
-    def run_positions(self) -> None:
-        """Blind round: each user message contains only the topic and the
-        instruction — no other positions, no CEO text (none exists yet)."""
-        self.print_fn("\n=== Opening positions (filed blind) ===")
+    def positions_stream(self):
+        """Blind round, yielded per participant so the dashboard can render
+        each position as it files: each user message contains only the topic
+        and the instruction — no other positions, no CEO text (none exists
+        yet)."""
         for p in self.participants:
             reply = self._call_participant(
                 p,
@@ -200,11 +201,17 @@ class BoardroomSession:
                 f"strongest reason. No other participant will see this until "
                 f"everyone has filed.",
             )
-            self._say("positions", p.department, reply)
+            entry = TranscriptEntry("positions", p.department, reply)
+            self.transcript.append(entry)
+            yield entry
 
-    def run_rebuttals(self) -> None:
+    def run_positions(self) -> None:
+        self.print_fn("\n=== Opening positions (filed blind) ===")
+        for entry in self.positions_stream():
+            self.print_fn(f"\n[{entry.speaker}]\n{entry.text}")
+
+    def rebuttals_stream(self):
         for round_no in range(1, MAX_REBUTTAL_ROUNDS + 1):
-            self.print_fn(f"\n=== Rebuttal round {round_no} ===")
             transcript_so_far = self._rendered_transcript()
             for p in self.participants:
                 reply = self._call_participant(
@@ -215,7 +222,9 @@ class BoardroomSession:
                     f"reason is encouraged; silent flips get flagged.",
                     tokens_key="boardroom_position",
                 )
-                self._say(f"rebuttal-{round_no}", p.department, reply)
+                entry = TranscriptEntry(f"rebuttal-{round_no}", p.department, reply)
+                self.transcript.append(entry)
+                yield entry
 
             if round_no == MAX_REBUTTAL_ROUNDS:
                 break
@@ -229,9 +238,73 @@ class BoardroomSession:
             if not m or m.group(1).lower() == "no":
                 break
 
+    def run_rebuttals(self) -> None:
+        current_round = ""
+        for entry in self.rebuttals_stream():
+            if entry.round != current_round:
+                current_round = entry.round
+                self.print_fn(f"\n=== Rebuttal round {current_round.split('-')[1]} ===")
+            self.print_fn(f"\n[{entry.speaker}]\n{entry.text}")
+
+    def floor_exchange(self, raw: str) -> list[TranscriptEntry]:
+        """One CEO floor exchange: @dept routes to that participant (with a
+        moderator-ruled interjection allowed), bare text goes to the brain.
+        Appends to the transcript and returns the new entries — shared by the
+        CLI loop and the dashboard endpoint."""
+        start = len(self.transcript)
+        self.transcript.append(TranscriptEntry("floor", "CEO", raw))
+
+        at_m = AT_DEPT_RE.match(raw)
+        if at_m and at_m.group(1) in {p.department for p in self.participants}:
+            dept = at_m.group(1)
+            participant = next(p for p in self.participants if p.department == dept)
+            reply = self._call_participant(
+                participant,
+                f"ROUND: floor\n\nTopic: {self.topic}\n\n"
+                f"Debate so far:\n\n{self._rendered_transcript()}\n\n"
+                f"The CEO addresses you directly: {at_m.group(2)}",
+                tokens_key="boardroom_floor",
+            )
+            self._say("floor", dept, reply)
+
+            # Others may interject only if the brain rules it relevant —
+            # at most one interjection per exchange.
+            verdict = self._call_moderator(
+                f"MODE: interjection\n\nTopic: {self.topic}\n\n"
+                f"Debate so far:\n\n{self._rendered_transcript()}\n\n"
+                f"Should any OTHER participant interject after that exchange? "
+                f"Reply INTERJECT: <department> or NONE."
+            )
+            int_m = INTERJECT_RE.search(verdict)
+            if int_m and int_m.group(1) in {p.department for p in self.participants} \
+                    and int_m.group(1) != dept:
+                interjector = next(
+                    p for p in self.participants if p.department == int_m.group(1)
+                )
+                reply = self._call_participant(
+                    interjector,
+                    f"ROUND: floor\n\nTopic: {self.topic}\n\n"
+                    f"Debate so far:\n\n{self._rendered_transcript()}\n\n"
+                    f"The moderator has ruled your interjection relevant. "
+                    f"Make it brief.",
+                    tokens_key="boardroom_position",
+                )
+                self._say("floor", interjector.department, reply)
+        else:
+            reply = self.llm.call(
+                self._moderator_blocks(),
+                f"MODE: floor_discussion\n\nTopic: {self.topic}\n\n"
+                f"Debate so far:\n\n{self._rendered_transcript()}\n\n"
+                f"The CEO says: {raw}",
+                max_tokens=self.config.max_tokens["boardroom_floor"],
+            )
+            self._say("floor", "brain", reply)
+
+        return self.transcript[start:]
+
     def run_ceo_floor(self) -> None:
-        """Interactive. Free text is the PRIMARY channel here: @dept to
-        address a department, bare text goes to the brain, 'done' ends."""
+        """Interactive CLI loop. Free text is the PRIMARY channel here: @dept
+        to address a department, bare text goes to the brain, 'done' ends."""
         self.print_fn(
             "\n=== CEO floor ===\n"
             "Address a department with @name (e.g. @creative what would change "
@@ -244,56 +317,10 @@ class BoardroomSession:
                 continue
             if raw.lower() == "done":
                 break
+            self.floor_exchange(raw)
 
-            self.transcript.append(TranscriptEntry("floor", "CEO", raw))
-            at_m = AT_DEPT_RE.match(raw)
-            if at_m and at_m.group(1) in {p.department for p in self.participants}:
-                dept = at_m.group(1)
-                participant = next(p for p in self.participants if p.department == dept)
-                reply = self._call_participant(
-                    participant,
-                    f"ROUND: floor\n\nTopic: {self.topic}\n\n"
-                    f"Debate so far:\n\n{self._rendered_transcript()}\n\n"
-                    f"The CEO addresses you directly: {at_m.group(2)}",
-                    tokens_key="boardroom_floor",
-                )
-                self._say("floor", dept, reply)
-
-                # Others may interject only if the brain rules it relevant —
-                # at most one interjection per exchange.
-                verdict = self._call_moderator(
-                    f"MODE: interjection\n\nTopic: {self.topic}\n\n"
-                    f"Debate so far:\n\n{self._rendered_transcript()}\n\n"
-                    f"Should any OTHER participant interject after that exchange? "
-                    f"Reply INTERJECT: <department> or NONE."
-                )
-                int_m = INTERJECT_RE.search(verdict)
-                if int_m and int_m.group(1) in {p.department for p in self.participants} \
-                        and int_m.group(1) != dept:
-                    interjector = next(
-                        p for p in self.participants if p.department == int_m.group(1)
-                    )
-                    reply = self._call_participant(
-                        interjector,
-                        f"ROUND: floor\n\nTopic: {self.topic}\n\n"
-                        f"Debate so far:\n\n{self._rendered_transcript()}\n\n"
-                        f"The moderator has ruled your interjection relevant. "
-                        f"Make it brief.",
-                        tokens_key="boardroom_position",
-                    )
-                    self._say("floor", interjector.department, reply)
-            else:
-                reply = self.llm.call(
-                    self._moderator_blocks(),
-                    f"MODE: floor_discussion\n\nTopic: {self.topic}\n\n"
-                    f"Debate so far:\n\n{self._rendered_transcript()}\n\n"
-                    f"The CEO says: {raw}",
-                    max_tokens=self.config.max_tokens["boardroom_floor"],
-                )
-                self._say("floor", "brain", reply)
-
-    def run_synthesis(self) -> str:
-        blocks = [
+    def _synthesis_blocks(self) -> list[dict]:
+        return [
             {"type": "text", "text": "\n\n---\n\n".join([
                 self._read_prompt("boardroom_synthesis.md"),
                 self.hq.read_company_charter(),
@@ -301,8 +328,24 @@ class BoardroomSession:
             ]), "cache_control": {"type": "ephemeral"}},
             {"type": "text", "text": f"Full debate transcript:\n\n{self._rendered_transcript()}"},
         ]
+
+    def synthesis_stream(self):
+        """Token-delta generator for the dashboard. On completion the full
+        text is recorded on the session/transcript, same as run_synthesis."""
+        chunks: list[str] = []
+        for delta in self.llm.stream(
+            self._synthesis_blocks(),
+            f"MODE: recommendation\n\nTopic: {self.topic}\n\nProduce your synthesis.",
+            max_tokens=self.config.max_tokens["boardroom_synthesis"],
+        ):
+            chunks.append(delta)
+            yield delta
+        self.synthesis_text = "".join(chunks)
+        self.transcript.append(TranscriptEntry("synthesis", "brain", self.synthesis_text))
+
+    def run_synthesis(self) -> str:
         self.synthesis_text = self.llm.call(
-            blocks,
+            self._synthesis_blocks(),
             f"MODE: recommendation\n\nTopic: {self.topic}\n\nProduce your synthesis.",
             max_tokens=self.config.max_tokens["boardroom_synthesis"],
         )
@@ -323,9 +366,21 @@ class BoardroomSession:
         self.transcript.append(TranscriptEntry("ruling", "CEO", ruling))
         return ruling
 
-    def finalize(self, ruling_text: str) -> dict:
-        """One records call -> Decision Log Entries / Directive Updates /
-        Ruling Summary, then all HQ writes. Returns a summary dict."""
+    def _cli_ratify(self, dept: str, change: str) -> bool:
+        """Default tier-ratification prompt for the interactive CLI."""
+        self.print_fn(
+            f"\nThe synthesized directive for {dept} includes a "
+            f"tier/status change ({change}). Tier changes are explicit "
+            f"board decisions — they are never applied silently."
+        )
+        return self.input_fn(f"Ratify this change for {dept} now? [y/N] ").strip().lower() == "y"
+
+    def prepare_records(self, ruling_text: str) -> dict:
+        """The records LLM call + parsing, NO writes. Returns everything
+        commit_records needs, including the tier/status changes that require
+        explicit CEO ratification. Split from commit so the dashboard can ask
+        its ratification questions between the two without re-running the
+        model (which would double-append decisions)."""
         from brain.records import (
             extract_directive_updates,
             parse_decision_entries,
@@ -336,31 +391,20 @@ class BoardroomSession:
         section_re = re.compile(
             r"^## (Decision Log Entries|Directive Updates|Ruling Summary)\s*$", re.MULTILINE
         )
-        blocks = [
-            {"type": "text", "text": "\n\n---\n\n".join([
-                self._read_prompt("boardroom_synthesis.md"),
-                self.hq.read_company_charter(),
-                self.hq.read_tiers(),
-            ]), "cache_control": {"type": "ephemeral"}},
-            {"type": "text", "text": f"Full debate transcript:\n\n{self._rendered_transcript()}"},
-        ]
         output = self.llm.call(
-            blocks,
+            self._synthesis_blocks(),
             f"MODE: records\n\nTopic: {self.topic}\n\n"
             f"The CEO's ruling:\n{ruling_text}\n\n"
             f"Today's date is {date.today().isoformat()}. Produce the records.",
             max_tokens=self.config.max_tokens["boardroom_synthesis"],
         )
         sections = split_sections(output, section_re)
-
         entries = parse_decision_entries(sections.get("Decision Log Entries", ""))
-        for entry in entries:
-            self.hq.append_decision(entry)
-
         updates, warnings = extract_directive_updates(
             sections.get("Directive Updates", "None."), self.hq.list_departments()
         )
-        written = []
+
+        pending_ratifications = []
         for dept, content in updates.items():
             try:
                 current = self.hq.read_directive(dept)
@@ -368,18 +412,40 @@ class BoardroomSession:
                 current = ""
             change = tier_or_status_changed(current, content) if current else None
             if change:
+                pending_ratifications.append({"dept": dept, "change": change})
+
+        return {
+            "ruling_text": ruling_text,
+            "sections": sections,
+            "entries": entries,
+            "updates": updates,
+            "warnings": warnings,
+            "pending_ratifications": pending_ratifications,
+        }
+
+    def commit_records(self, prepared: dict, ratify_fn=None) -> dict:
+        """All HQ writes for a prepared records bundle. `ratify_fn(dept,
+        change) -> bool` decides whether a tier/status change smuggled into a
+        directive rewrite gets applied; defaults to the CLI's inline [y/N]
+        prompt."""
+        ruling_text = prepared["ruling_text"]
+        sections = prepared["sections"]
+        entries = prepared["entries"]
+        warnings = list(prepared["warnings"])
+        pending = {p["dept"]: p["change"] for p in prepared["pending_ratifications"]}
+
+        for entry in entries:
+            self.hq.append_decision(entry)
+
+        ratify = ratify_fn or self._cli_ratify
+        written = []
+        for dept, content in prepared["updates"].items():
+            change = pending.get(dept)
+            if change:
                 # Tier/status moves are explicit board decisions, never a
                 # silent side effect of a synthesized rewrite. The CEO is in
                 # the room — make them ratify it in so many words.
-                self.print_fn(
-                    f"\nThe synthesized directive for {dept} includes a "
-                    f"tier/status change ({change}). Tier changes are explicit "
-                    f"board decisions — they are never applied silently."
-                )
-                confirm = self.input_fn(
-                    f"Ratify this change for {dept} now? [y/N] "
-                ).strip().lower()
-                if confirm != "y":
+                if not ratify(dept, change):
                     warnings.append(
                         f"directive update for {dept} included a tier/status "
                         f"change ({change}) the CEO did not ratify — skipped"
@@ -416,3 +482,7 @@ class BoardroomSession:
             "directives_updated": written,
             "warnings": warnings,
         }
+
+    def finalize(self, ruling_text: str, ratify_fn=None) -> dict:
+        """prepare + commit in one step — the CLI path."""
+        return self.commit_records(self.prepare_records(ruling_text), ratify_fn)

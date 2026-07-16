@@ -51,20 +51,26 @@
   </section>
 
   <section class="view" id="board">
-    <div class="card">
-      <h2>Boardroom transcripts</h2>
-      <div class="dim" style="font-size:12px;margin-bottom:10px">
-        Past debates, read from HQ. Live boardroom-in-dashboard arrives in a
-        later increment — convene one now with:
-        <code>brain boardroom "&lt;topic&gt;"</code>
+    <div class="card" id="brLive">
+      <h2>Boardroom</h2>
+      <div class="dim" style="font-size:12px;margin-bottom:8px" id="brHint">
+        Open a topic and the brain convenes the departments. Each argues for
+        what's best for the <i>company</i> from its own vantage — disagreement
+        on the record is required. Your lean stays hidden until positions are
+        filed.
       </div>
+      <div id="brLog"></div>
+      <div id="brChips" class="chiprow"></div>
+      <form id="brForm" class="chatform">
+        <input type="text" id="brInput" placeholder='Type a topic to open the boardroom. (Voice: OS dictation works here.)' autocomplete="off">
+        <button type="submit" id="brSend">open</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Past transcripts</h2>
       <div id="boardList"></div>
     </div>
     <div id="boardDetail"></div>
-    <div class="card chat-placeholder">
-      <h2>Open a topic</h2>
-      <input type="text" disabled placeholder="Live boardroom — coming online in a later increment.">
-    </div>
   </section>
 
   <section class="view" id="cmds">

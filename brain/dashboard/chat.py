@@ -37,6 +37,24 @@ class LogDecisionRequest(BaseModel):
     departments: list[str] = []
 
 
+class BoardroomOpenRequest(BaseModel):
+    topic: str
+    depts: list[str] | None = None
+    all: bool = False
+
+
+class FloorRequest(BaseModel):
+    message: str
+
+
+class RuleRequest(BaseModel):
+    ruling: str
+    # Answers to tier-ratification questions, keyed by department. The first
+    # /rule call without answers returns needs_ratification; the UI asks the
+    # CEO and re-posts with answers filled in.
+    ratifications: dict[str, bool] = {}
+
+
 def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) -> None:
     """`make_llm` is a zero-arg factory returning an object with
     stream()/call() — the real LLM in production, a fake in tests."""
@@ -89,3 +107,122 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
             departments=body.departments,
         ))
         return {"logged": True}
+
+    # ------------------------------------------------------------------
+    # Live boardroom. One debate at a time (single-CEO localhost app);
+    # the in-flight session is the only state the dashboard ever holds,
+    # and everything durable still lands in HQ at /rule.
+    # ------------------------------------------------------------------
+    state: dict = {"session": None, "prepared": None}
+
+    def _session():
+        if state["session"] is None:
+            raise HTTPException(status_code=409, detail="No boardroom in progress — open a topic first.")
+        return state["session"]
+
+    @app.post("/api/boardroom/open")
+    def boardroom_open(body: BoardroomOpenRequest):
+        from brain.boardroom import BoardroomSession
+
+        if state["session"] is not None:
+            raise HTTPException(status_code=409,
+                                detail="A debate is already in progress — rule on it or abandon it first.")
+        topic = body.topic.strip()
+        if not topic:
+            raise HTTPException(status_code=422, detail="Empty topic")
+
+        session = BoardroomSession(
+            make_llm(), config, hq, topic,
+            input_fn=lambda prompt: "",  # never used by dashboard flow
+            print_fn=lambda s: None,
+        )
+
+        def event_stream():
+            convened = session.convene(override_depts=body.depts,
+                                       all_departments=body.all)
+            if not convened:
+                yield _sse({"done": True, "declined": True,
+                            "reason": "The brain declined to convene — try brain ask for this one."})
+                return
+            state["session"] = session
+            yield _sse({"participants": [
+                {"department": p.department, "advisory": p.advisory}
+                for p in session.participants
+            ]})
+
+            for entry in session.positions_stream():
+                yield _sse({"round": entry.round, "speaker": entry.speaker, "text": entry.text})
+            for entry in session.rebuttals_stream():
+                yield _sse({"round": entry.round, "speaker": entry.speaker, "text": entry.text})
+
+            yield _sse({"done": True, "floor_open": True})
+
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+    @app.post("/api/boardroom/floor")
+    def boardroom_floor(body: FloorRequest):
+        session = _session()
+        message = body.message.strip()
+        if not message:
+            raise HTTPException(status_code=422, detail="Empty message")
+
+        def event_stream():
+            for entry in session.floor_exchange(message):
+                yield _sse({"round": entry.round, "speaker": entry.speaker, "text": entry.text})
+            yield _sse({"done": True})
+
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+    @app.post("/api/boardroom/synthesize")
+    def boardroom_synthesize():
+        session = _session()
+
+        def event_stream():
+            for delta in session.synthesis_stream():
+                yield _sse({"delta": delta})
+            yield _sse({"done": True})
+
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+    @app.post("/api/boardroom/rule")
+    def boardroom_rule(body: RuleRequest):
+        session = _session()
+        ruling = body.ruling.strip()
+        if not ruling:
+            raise HTTPException(status_code=422, detail="Empty ruling")
+
+        # First call runs the records model and holds the bundle; if tier
+        # ratifications are needed and unanswered, nothing is written and the
+        # UI must re-post with answers. Second call reuses the bundle.
+        if state["prepared"] is None:
+            from brain.boardroom import TranscriptEntry
+            session.transcript.append(TranscriptEntry("ruling", "CEO", ruling))
+            state["prepared"] = session.prepare_records(ruling)
+
+        prepared = state["prepared"]
+        unanswered = [
+            p for p in prepared["pending_ratifications"]
+            if p["dept"] not in body.ratifications
+        ]
+        if unanswered:
+            return {"needs_ratification": unanswered}
+
+        summary = session.commit_records(
+            prepared,
+            ratify_fn=lambda dept, change: bool(body.ratifications.get(dept)),
+        )
+        state["session"] = None
+        state["prepared"] = None
+        return {
+            "transcript_path": str(summary["transcript_path"]),
+            "decisions": summary["decisions"],
+            "directives_updated": summary["directives_updated"],
+            "warnings": summary["warnings"],
+        }
+
+    @app.post("/api/boardroom/abandon")
+    def boardroom_abandon():
+        # Walk away without records — nothing was written to HQ yet.
+        state["session"] = None
+        state["prepared"] = None
+        return {"abandoned": True}

@@ -213,6 +213,174 @@ function offerDecisionLog(record) {
   chips.append(logBtn, dismissBtn);
 }
 
+/* ---------- live boardroom ---------- */
+const DEPT_COLORS = ["var(--blue)", "var(--coral)", "var(--green)", "var(--amber)", "var(--purple)"];
+let brPhase = "closed"; // closed | debating | floor | synthesized
+let brDeptColors = {};
+
+function brMsg(speaker, text) {
+  const isCeo = speaker === "CEO";
+  const isBrain = speaker === "brain";
+  const color = isCeo ? "var(--amber)" : isBrain ? "var(--purple)" : (brDeptColors[speaker] || "var(--blue)");
+  const label = isCeo ? "You · CEO" : isBrain ? "Brain · COO" : speaker;
+  const av = isCeo ? "CEO" : isBrain ? "BR" : speaker.slice(0, 2).toUpperCase();
+  const m = document.createElement("div");
+  m.className = "msg" + (isCeo ? " ceoMsg" : "");
+  m.innerHTML = `<div class="av" style="color:${color}">${esc(av)}</div>
+    <div class="b"><div class="who" style="color:${color}">${esc(label)}</div>
+    <div class="tx"></div></div>`;
+  m.querySelector(".tx").textContent = text;
+  $("brLog").appendChild(m);
+  m.scrollIntoView({ behavior: "smooth", block: "end" });
+  return m.querySelector(".tx");
+}
+function brSys(text) {
+  const s = document.createElement("div");
+  s.className = "sysline";
+  s.textContent = text;
+  $("brLog").appendChild(s);
+}
+function brSetInput(placeholder, buttonLabel) {
+  $("brInput").placeholder = placeholder;
+  $("brSend").textContent = buttonLabel;
+}
+
+$("brForm").onsubmit = async (ev) => {
+  ev.preventDefault();
+  const raw = $("brInput").value.trim();
+  if (!raw) return;
+  $("brInput").value = "";
+  $("brSend").disabled = true;
+  try {
+    if (brPhase === "closed") await brOpen(raw);
+    else if (brPhase === "floor") await brFloor(raw);
+    else if (brPhase === "synthesized") await brRule(raw, {});
+  } catch (err) {
+    brSys(`error: ${err.message}`);
+  } finally {
+    $("brSend").disabled = false;
+    $("brInput").focus();
+  }
+};
+
+async function brOpen(topic) {
+  $("brLog").innerHTML = "";
+  $("brChips").innerHTML = "";
+  brDeptColors = {};
+  brSys(`brain boardroom "${topic}" — convening…`);
+  const response = await fetch("/api/boardroom/open", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ topic }),
+  });
+  if (!response.ok) throw new Error((await response.json()).detail || `HTTP ${response.status}`);
+  brPhase = "debating";
+  let round = "";
+  await readSSE(response, (e) => {
+    if (e.participants) {
+      e.participants.forEach((p, i) => (brDeptColors[p.department] = DEPT_COLORS[i % DEPT_COLORS.length]));
+      brSys("convened: " + e.participants.map((p) => p.department + (p.advisory ? " (advisory)" : "")).join(", "));
+    }
+    if (e.round && e.round !== round) {
+      round = e.round;
+      brSys(round === "positions" ? "— opening positions (filed blind) —" : `— ${round} —`);
+    }
+    if (e.speaker) brMsg(e.speaker, e.text);
+    if (e.done && e.declined) { brSys(e.reason); brPhase = "closed"; }
+    if (e.done && e.floor_open) {
+      brPhase = "floor";
+      brSys("the floor is yours");
+      brSetInput("@department to question anyone, bare text talks to the brain…", "send");
+      brFloorChips();
+    }
+  });
+}
+
+function brFloorChips() {
+  $("brChips").innerHTML = `<span class="hint">when you're ready</span>`;
+  const b = document.createElement("button");
+  b.className = "primary";
+  b.textContent = "Move to synthesis";
+  b.onclick = brSynthesize;
+  $("brChips").appendChild(b);
+}
+
+async function brFloor(message) {
+  brMsg("CEO", message);
+  const response = await fetch("/api/boardroom/floor", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+  if (!response.ok) throw new Error((await response.json()).detail || `HTTP ${response.status}`);
+  await readSSE(response, (e) => {
+    if (e.speaker && e.speaker !== "CEO") brMsg(e.speaker, e.text);
+  });
+}
+
+async function brSynthesize() {
+  $("brChips").innerHTML = "";
+  brSys("— synthesis —");
+  const tx = brMsg("brain", "");
+  const response = await fetch("/api/boardroom/synthesize", { method: "POST" });
+  if (!response.ok) { brSys(`error: HTTP ${response.status}`); return; }
+  await readSSE(response, (e) => { if (e.delta) tx.textContent += e.delta; });
+  brPhase = "synthesized";
+  brSetInput("…or type your ruling in your own words", "rule");
+  $("brChips").innerHTML = `<span class="hint">your ruling — chips or your own words below</span>`;
+  [
+    { label: "Adopt the brain's recommendation", ruling: "Adopted the brain's recommendation as synthesized.", primary: true },
+    { label: "Reject", ruling: "REJECTED: the recommendation is not adopted." },
+  ].forEach((o) => {
+    const b = document.createElement("button");
+    if (o.primary) b.className = "primary";
+    b.textContent = o.label;
+    b.onclick = () => brRule(o.ruling, {});
+    $("brChips").appendChild(b);
+  });
+}
+
+async function brRule(ruling, ratifications) {
+  brMsg("CEO", ruling);
+  $("brChips").innerHTML = "";
+  const response = await fetch("/api/boardroom/rule", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ruling, ratifications }),
+  });
+  if (!response.ok) { brSys(`error: HTTP ${response.status}`); return; }
+  const data = await response.json();
+
+  if (data.needs_ratification) {
+    const pending = data.needs_ratification[0];
+    brSys(`the records include a tier/status change for ${pending.dept} (${pending.change}) — tier changes are explicit board decisions, never silent.`);
+    $("brChips").innerHTML = `<span class="hint">ratify ${esc(pending.dept)}: ${esc(pending.change)}?</span>`;
+    [
+      { label: `Ratify: ${pending.change}`, approve: true, primary: true },
+      { label: "Do not ratify (skip that change)", approve: false },
+    ].forEach((o) => {
+      const b = document.createElement("button");
+      if (o.primary) b.className = "primary";
+      b.textContent = o.label;
+      b.onclick = () => brRule(ruling, { ...ratifications, [pending.dept]: o.approve });
+      $("brChips").appendChild(b);
+    });
+    return;
+  }
+
+  const d = document.createElement("div");
+  d.className = "decis";
+  d.textContent = `✓ ruled · ${data.decisions} decision(s) logged` +
+    (data.directives_updated.length ? ` · directives updated: ${data.directives_updated.join(", ")}` : "");
+  $("brLog").appendChild(d);
+  (data.warnings || []).forEach((w) => brSys(`warning: ${w}`));
+  brSys(`transcript: ${data.transcript_path}`);
+  brPhase = "closed";
+  brSetInput("Type a topic to open the boardroom.", "open");
+  loadBoardroom();
+  loadOverview();
+}
+
 loadOverview();
 loadDepartments();
 loadBoardroom();

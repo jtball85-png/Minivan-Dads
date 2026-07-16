@@ -43,3 +43,8 @@ Format per entry:
 - Rationale: POD's zero-inventory model means launching doesn't lock in the badge design — a mediocre flagship risks the brand-identity asset the charter calls the one unacceptable failure, but that risk is addressed with a short, concrete pass/fail checklist (thumbnail readability, "would a dad screenshot this" test, no typographic/trademark issues) rather than an open-ended "unarguably nailed" bar with no stopping point. The back-to-school window is real and non-renewable; the checklist gate preserves it while still forcing a genuine quality check before anything goes live. Post-launch, customer reaction becomes real signal for sharpening the design ahead of the next print run, at no financial cost. Dissents: creative (wanted a full hold until the badge is unarguably nailed, not a time-boxed checklist); market_intel (same position as creative — hold until the core identity asset is right, seasonal window not worth the risk).
 - Decided by: CEO
 - Affected departments: creative, finance, market_intel, content
+
+## 2026-07-16 — Include numbered founding-member card in first hat drop, capped at confirmed unit cost
+- Rationale: The badge-as-business thesis (creative) justified the collectibility upside, while finance's insistence on a real quoted per-unit cost before any spend commitment was honored as a gate rather than overridden — the CEO approved the card only once bounded to a cost cap and scoped to the first drop, consistent with the charter's conservative-spending pillar and the CEO-only spend guardrail. The decision will be revisited at the first monthly review rather than treated as a permanent packaging default. Dissents: none
+- Decided by: CEO
+- Affected departments: creative, finance

@@ -25,11 +25,16 @@ class StreamingFakeLLM(FakeLLM):
 def make_client(config, hq, tmp_hq_root, responses):
     (tmp_hq_root / "charter" / "company.md").write_text("# Charter", encoding="utf-8")
     (tmp_hq_root / "charter" / "tiers.md").write_text("# Tiers", encoding="utf-8")
-    (tmp_hq_root / "directives" / "market_intel.md").write_text("# D", encoding="utf-8")
+    (tmp_hq_root / "directives" / "market_intel.md").write_text(
+        "# Directive: Market Intel\n\nLast updated: 2026-07-16\n\n"
+        "## Tier\n\nTier 0 — Read-only\n\n## Status\n\nactive\n",
+        encoding="utf-8",
+    )
     (tmp_hq_root / "directives" / "creative.md").write_text("# D", encoding="utf-8")
     prompts = config.prompts_root
     prompts.mkdir(parents=True, exist_ok=True)
-    for name in ("system_core.md", "ask.md"):
+    for name in ("system_core.md", "ask.md", "boardroom_participant.md",
+                 "boardroom_moderator.md", "boardroom_synthesis.md"):
         (prompts / name).write_text(f"# {name}", encoding="utf-8")
 
     llm = StreamingFakeLLM(responses=responses)
@@ -105,3 +110,159 @@ class TestLogDecision:
         client = TestClient(create_app(config, hq))
         assert client.get("/api/overview").status_code == 200
         assert client.post("/api/ask", json={"question": "q"}).status_code in (404, 405)
+
+
+# --- live boardroom routes -------------------------------------------------
+
+RECORDS_PLAIN = """## Decision Log Entries
+
+### Adopt September plan
+- Rationale: reasons. Dissents: none
+- Decided by: CEO
+- Affected departments: none
+
+## Directive Updates
+
+None.
+
+## Ruling Summary
+
+Adopted.
+"""
+
+RECORDS_TIER_SMUGGLE = """## Decision Log Entries
+
+### Promote market_intel
+- Rationale: reasons. Dissents: none
+- Decided by: CEO
+- Affected departments: market_intel
+
+## Directive Updates
+
+### market_intel
+
+```markdown
+# Directive: Market Intel
+
+Last updated: 2026-07-16
+
+## Tier
+
+Tier 2 — Act-within-bounds
+
+## Status
+
+active
+```
+
+## Ruling Summary
+
+Promoted.
+"""
+
+
+def open_debate(client, responses_llm):
+    """Drive /open with a scripted convene + one position + one rebuttal."""
+    response = client.post("/api/boardroom/open",
+                           json={"topic": "Sept vs Nov?", "depts": ["market_intel"]})
+    assert response.status_code == 200
+    return parse_sse(response.text)
+
+
+class TestBoardroomRoutes:
+    def test_open_streams_positions_and_rebuttals(self, config, hq, tmp_hq_root):
+        client, llm = make_client(config, hq, tmp_hq_root, [
+            "MI position",            # positions (1 participant)
+            "MI rebuttal",            # rebuttal round 1
+            "SECOND_ROUND: no",       # moderator calls the question
+        ])
+        events = open_debate(client, llm)
+        assert events[0]["participants"] == [{"department": "market_intel", "advisory": False}]
+        speakers = [(e["round"], e["text"]) for e in events if "speaker" in e]
+        assert ("positions", "MI position") in speakers
+        assert ("rebuttal-1", "MI rebuttal") in speakers
+        assert events[-1] == {"done": True, "floor_open": True}
+
+    def test_second_open_409s_while_debate_in_progress(self, config, hq, tmp_hq_root):
+        client, llm = make_client(config, hq, tmp_hq_root,
+                                  ["p", "r", "SECOND_ROUND: no"])
+        open_debate(client, llm)
+        response = client.post("/api/boardroom/open", json={"topic": "another"})
+        assert response.status_code == 409
+
+    def test_floor_requires_open_debate(self, config, hq, tmp_hq_root):
+        client, _ = make_client(config, hq, tmp_hq_root, [])
+        assert client.post("/api/boardroom/floor", json={"message": "hi"}).status_code == 409
+
+    def test_floor_exchange_routes_at_dept(self, config, hq, tmp_hq_root):
+        client, llm = make_client(config, hq, tmp_hq_root,
+                                  ["p", "r", "SECOND_ROUND: no",
+                                   "MI floor answer", "NONE"])
+        open_debate(client, llm)
+        response = client.post("/api/boardroom/floor",
+                               json={"message": "@market_intel why?"})
+        events = parse_sse(response.text)
+        speakers = [e["speaker"] for e in events if "speaker" in e]
+        assert speakers == ["CEO", "market_intel"]
+
+    def test_full_rule_flow_writes_records(self, config, hq, tmp_hq_root):
+        client, llm = make_client(config, hq, tmp_hq_root,
+                                  ["p", "r", "SECOND_ROUND: no",
+                                   "synthesis text", RECORDS_PLAIN])
+        open_debate(client, llm)
+        synth = client.post("/api/boardroom/synthesize")
+        assert "synthesis text" in "".join(
+            e.get("delta", "") for e in parse_sse(synth.text))
+
+        response = client.post("/api/boardroom/rule",
+                               json={"ruling": "Adopt it.", "ratifications": {}})
+        data = response.json()
+        assert data["decisions"] == 1
+        assert data["directives_updated"] == []
+        assert hq.read_decisions()[-1].title == "Adopt September plan"
+        # Session cleared: a new debate can open
+        assert client.post("/api/boardroom/floor", json={"message": "x"}).status_code == 409
+
+    def test_tier_ratification_round_trip(self, config, hq, tmp_hq_root):
+        client, llm = make_client(config, hq, tmp_hq_root,
+                                  ["p", "r", "SECOND_ROUND: no",
+                                   RECORDS_TIER_SMUGGLE])
+        open_debate(client, llm)
+
+        # First rule call: needs ratification, nothing written yet
+        first = client.post("/api/boardroom/rule",
+                            json={"ruling": "Promote.", "ratifications": {}}).json()
+        assert first["needs_ratification"][0]["dept"] == "market_intel"
+        assert "tier 0 -> 2" in first["needs_ratification"][0]["change"]
+        assert "Tier 2" not in hq.read_directive("market_intel")
+
+        # Second call with the answer: applied, one records LLM call total
+        records_calls = [c for c in llm.calls if "MODE: records" in c.user_message]
+        second = client.post("/api/boardroom/rule",
+                             json={"ruling": "Promote.",
+                                   "ratifications": {"market_intel": True}}).json()
+        assert second["directives_updated"] == ["market_intel"]
+        assert "Tier 2" in hq.read_directive("market_intel")
+        assert [c for c in llm.calls if "MODE: records" in c.user_message] == records_calls
+
+    def test_tier_ratification_declined_skips_write(self, config, hq, tmp_hq_root):
+        client, llm = make_client(config, hq, tmp_hq_root,
+                                  ["p", "r", "SECOND_ROUND: no",
+                                   RECORDS_TIER_SMUGGLE])
+        open_debate(client, llm)
+        client.post("/api/boardroom/rule", json={"ruling": "Promote.", "ratifications": {}})
+        data = client.post("/api/boardroom/rule",
+                           json={"ruling": "Promote.",
+                                 "ratifications": {"market_intel": False}}).json()
+        assert data["directives_updated"] == []
+        assert any("did not ratify" in w for w in data["warnings"])
+        assert "Tier 2" not in hq.read_directive("market_intel")
+
+    def test_abandon_clears_session(self, config, hq, tmp_hq_root):
+        client, llm = make_client(config, hq, tmp_hq_root,
+                                  ["p", "r", "SECOND_ROUND: no",
+                                   "p2", "r2", "SECOND_ROUND: no"])
+        open_debate(client, llm)
+        assert client.post("/api/boardroom/abandon").json() == {"abandoned": True}
+        assert client.post("/api/boardroom/open",
+                           json={"topic": "new", "depts": ["market_intel"]}).status_code == 200
