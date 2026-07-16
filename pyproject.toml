@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "minivan-dads-brain"
+version = "0.1.0"
+description = "The Brain — COO orchestrator for Minivan Dads Inc."
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.40",
+    "python-dotenv",
+    "PyYAML",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+brain = "brain.main:cli"
+
+[tool.setuptools]
+packages = ["brain", "brain.actions"]
+
+[tool.setuptools.package-data]
+brain = ["prompts/*.md", "config.yaml"]

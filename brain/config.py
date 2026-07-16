@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -10,6 +11,30 @@ import yaml
 from brain.models import DepartmentConfig
 
 DEFAULT_CONFIG_PATH = Path(__file__).parent / "config.yaml"
+
+
+def find_repo_root(start: Path | None = None) -> Path:
+    """Locate the repo root so the `brain` console script works from any
+    directory. Order: BRAIN_ROOT env var, then walk upward from `start`
+    (default cwd) looking for hq/charter/company.md."""
+    env_root = os.environ.get("BRAIN_ROOT")
+    if env_root:
+        root = Path(env_root)
+        if (root / "hq" / "charter" / "company.md").exists():
+            return root
+        raise FileNotFoundError(
+            f"BRAIN_ROOT is set to {root}, but no hq/charter/company.md found there."
+        )
+
+    current = (start or Path.cwd()).resolve()
+    for candidate in [current, *current.parents]:
+        if (candidate / "hq" / "charter" / "company.md").exists():
+            return candidate
+
+    raise FileNotFoundError(
+        "Not inside the Minivan Dads repo (no hq/charter/company.md found "
+        "walking up from here). Run from the repo, or set BRAIN_ROOT."
+    )
 
 
 @dataclass
@@ -29,10 +54,11 @@ class BrainConfig:
 
 def load_config(path: Path | None = None, repo_root: Path | None = None) -> BrainConfig:
     """Load config.yaml. Paths for hq_root/prompts_root are resolved relative
-    to repo_root (defaults to the current working directory) so the CLI
-    works regardless of where it's invoked from within the repo."""
+    to repo_root; when not given explicitly, the root is discovered via
+    BRAIN_ROOT or an upward walk, so `brain <command>` works from any
+    directory inside the repo."""
     config_path = path or DEFAULT_CONFIG_PATH
-    root = repo_root or Path.cwd()
+    root = repo_root or find_repo_root()
 
     with open(config_path, "r", encoding="utf-8") as f:
         raw = yaml.safe_load(f)

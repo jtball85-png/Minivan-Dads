@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minivan Dads — CEO Dashboard</title>
+<style>
+  :root{
+    --bg:#101216; --panel:#171a20; --panel2:#1c2028; --ink:#d8d4c6; --dim:#7d8291;
+    --amber:#f2b94b; --green:#5ec9a0; --coral:#e8836b; --blue:#7ba3d0; --purple:#a58fd4;
+    --line:#262b34; --chip:#1e232c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:13px;line-height:1.6;padding:14px 10px 40px;display:flex;justify-content:center}
+  .app{width:100%;max-width:760px}
+  header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+  h1{font-size:15px;letter-spacing:.05em}
+  h1 b{color:var(--amber)}
+  .sub{color:var(--dim);font-size:11px}
+  nav{display:flex;gap:6px;margin:14px 0;flex-wrap:wrap}
+  nav button{font-family:inherit;font-size:12px;color:var(--dim);background:var(--chip);
+    border:1px solid var(--line);border-radius:7px;padding:8px 13px;cursor:pointer}
+  nav button.on{color:var(--amber);border-color:#4a3d22;background:#201c14}
+  nav button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .view{display:none}.view.on{display:block}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:10px}
+  .card h2{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:9px}
+  .statrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .stat{flex:1;min-width:105px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .stat .n{font-size:19px;font-weight:700}
+  .stat .k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.07em}
+  .n.amber{color:var(--amber)} .n.green{color:var(--green)} .n.coral{color:var(--coral)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+  .dept{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;cursor:pointer;text-align:left;font-family:inherit;color:var(--ink)}
+  .dept:hover{border-color:#3a4150}
+  .dept:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .dept .nm{font-weight:700;font-size:12.5px}
+  .dept .meta{font-size:10.5px;color:var(--dim);margin-top:3px}
+  .pill{display:inline-block;font-size:9.5px;padding:1px 7px;border-radius:20px;border:1px solid;margin-top:6px;letter-spacing:.05em}
+  .pill.t0{color:var(--blue);border-color:#2c3a4d}
+  .pill.t1{color:var(--green);border-color:#274538}
+  .pill.dorm{color:var(--dim);border-color:var(--line)}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px}
+  .row:last-child{border-bottom:none}
+  .row .t{color:var(--dim);white-space:nowrap}
+  .urgent{color:var(--coral)} .okc{color:var(--green)} .amb{color:var(--amber)}
+  /* dept detail */
+  #deptDetail .back{background:none;border:none;color:var(--amber);font-family:inherit;font-size:12px;cursor:pointer;padding:0;margin-bottom:10px}
+  .kv{margin-bottom:10px}
+  .kv .k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+  .kv .v{font-size:12.5px;white-space:pre-wrap}
+  /* boardroom */
+  .msg{display:flex;gap:9px;margin-bottom:11px}
+  .av{flex:none;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+      font-size:10px;font-weight:700;border:1px solid var(--line)}
+  .msg .b{flex:1}
+  .msg .who{font-size:10px;letter-spacing:.07em;text-transform:uppercase;margin-bottom:2px}
+  .msg .tx{font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:0 10px 10px 10px;padding:8px 11px}
+  .msg.ceoMsg .tx{background:#221d12;border-color:#4a3d22}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
+  .chips .hint{width:100%;font-size:10px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+  .chips button{font-family:inherit;font-size:12px;color:var(--ink);background:var(--chip);
+    border:1px solid var(--line);border-bottom-width:3px;border-radius:7px;padding:8px 13px;cursor:pointer}
+  .chips button.primary{color:var(--amber);border-color:#4a3d22}
+  .chips button:active{transform:translateY(1px)}
+  .sysline{color:var(--dim);font-size:11px;margin:8px 0 14px}
+  .decis{color:var(--green);font-size:12px;margin:4px 0 14px}
+  /* commands */
+  .cmdrow{padding:9px 0;border-bottom:1px solid var(--line)}
+  .cmdrow:last-child{border-bottom:none}
+  .cmdrow code{color:var(--amber);font-size:12.5px}
+  .cmdrow p{color:var(--dim);font-size:11.5px;margin-top:2px}
+  @media(max-width:480px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>MINIVAN <b>DADS</b> · CEO CONSOLE</h1>
+    <span class="sub">week 31 · phase 3 · Fri meeting in 2 days</span>
+  </header>
+
+  <nav>
+    <button class="on" data-v="home">Dashboard</button>
+    <button data-v="depts">Departments</button>
+    <button data-v="board">Boardroom</button>
+    <button data-v="cmds">Commands</button>
+  </nav>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="view on" id="home">
+    <div class="statrow">
+      <div class="stat"><div class="n amber">2</div><div class="k">open escalations</div></div>
+      <div class="stat"><div class="n green">3/3</div><div class="k">reports filed</div></div>
+      <div class="stat"><div class="n">31</div><div class="k">decisions logged</div></div>
+      <div class="stat"><div class="n coral">1</div><div class="k">stale directive</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Escalation inbox</h2>
+      <div class="row"><span class="urgent">▲ Competitor "minivan dad club" hats gaining traction on Etsy — trademark filing still open</span><span class="t">2d</span></div>
+      <div class="row"><span>◦ Creative requests ruling: chrome emblem vs embroidered patch for flagship</span><span class="t">1d</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Recent decisions</h2>
+      <div class="row"><span>DEC-030 · Content cadence 3/wk from Monday</span><span class="t okc">brain</span></div>
+      <div class="row"><span>DEC-029 · Killed "soccer chauffeur" design line — off-voice</span><span class="t amb">CEO</span></div>
+      <div class="row"><span>DEC-028 · Market Intel adds Amazon Merch watch</span><span class="t okc">brain</span></div>
+    </div>
+
+    <div class="card">
+      <h2>This week, from the brain</h2>
+      <div class="row"><span>Content bank at 22 approved drafts — 7 weeks of runway at current cadence</span></div>
+      <div class="row"><span>Badge decision is the critical path: it gates mockups, which gate launch</span></div>
+      <div class="row"><span class="amb">Suggested boardroom topic: September soft launch vs November full launch → open it in the Boardroom tab</span></div>
+    </div>
+  </section>
+
+  <!-- ============ DEPARTMENTS ============ -->
+  <section class="view" id="depts">
+    <div id="deptGrid" class="grid"></div>
+    <div id="deptDetail" style="display:none"></div>
+  </section>
+
+  <!-- ============ BOARDROOM ============ -->
+  <section class="view" id="board">
+    <div class="card" id="brIntro">
+      <h2>Boardroom</h2>
+      <div style="font-size:12.5px">Open a topic and the brain convenes the departments. Each argues for what's best for the <i>company</i> from its own vantage point — disagreement on the record is required, consensus is not.</div>
+      <div class="chips" style="margin-top:12px">
+        <button class="primary" onclick="startDebate()">Open topic: Sept soft launch vs Nov full launch</button>
+      </div>
+    </div>
+    <div id="brLog"></div>
+    <div id="brChips" class="chips"></div>
+  </section>
+
+  <!-- ============ COMMANDS ============ -->
+  <section class="view" id="cmds">
+    <div class="card">
+      <h2>CLI reference</h2>
+      <div class="cmdrow"><code>brain status</code><p>Morning glance: reports filed, escalations, actions taken in last 7 days, stale directives.</p></div>
+      <div class="cmdrow"><code>brain ingest</code><p>Read all new reports → produce this week's agenda with [BRAIN DECIDES] vs [CEO REQUIRED].</p></div>
+      <div class="cmdrow"><code>brain meeting</code><p>Run the weekly board meeting; writes minutes, decision log entries, updated directives.</p></div>
+      <div class="cmdrow"><code>brain boardroom "&lt;topic&gt;"</code><p>Convene a multi-agent debate on any topic. Positions → rebuttals → your Q&A → synthesis → logged decision with dissents.</p></div>
+      <div class="cmdrow"><code>brain ask "&lt;question&gt;"</code><p>Drop by the COO's office. Full company context, logs any resulting decision.</p></div>
+      <div class="cmdrow"><code>brain directive &lt;dept&gt;</code><p>Create or revise a department's standing orders, validated against charter + tiers.</p></div>
+      <div class="cmdrow"><code>brain rollback &lt;action_id&gt;</code><p>Restore pre-action snapshot for any executed change (action layer).</p></div>
+      <div class="cmdrow"><code>brain dashboard</code><p>Serve this console locally, live-reading HQ files.</p></div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ---------- tabs ---------- */
+document.querySelectorAll('nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    document.getElementById(b.dataset.v).classList.add('on');
+  };
+});
+
+/* ---------- departments ---------- */
+const DEPTS = {
+  market_intel:{nm:'Market Intel',tier:'t0',tl:'TIER 0 · READ',st:'active',last:'W31 filed',
+    dir:'Watch DadBod Apparel, Dad Gang, Etsy + Amazon Merch dad-niche bestsellers. Flag any minivan-adjacent design immediately. Report Fridays.',
+    rep:'• 2 new sellers entered minivan-adjacent space in 6 weeks\n• "girl dad" trend cooling; "van life dad" rising on TikTok\n• ESCALATED: "minivan dad club" Etsy shop, 41 sales/mo',
+    act:'(read-only — no external actions)'},
+  creative:{nm:'Creative',tier:'t1',tl:'TIER 1 · DRAFT',st:'active',last:'W31 filed',
+    dir:'Maintain ranked design backlog scored against brand voice. Top-5 with rationale weekly. Current priority: flagship badge finalists.',
+    rep:'• Finalists: chrome emblem vs embroidered patch (ruling requested)\n• Killed 3 concepts this week (2 off-voice, 1 too close to competitor)\n• Sayings bank: 14 approved, 6 in review',
+    act:'12 drafts filed to HQ this week'},
+  content:{nm:'Content',tier:'t1',tl:'TIER 1 · DRAFT',st:'active',last:'W31 filed',
+    dir:'Build launch content bank. 3 posts/wk cadence from Monday. All drafts ready-to-paste with suggested post times.',
+    rep:'• Bank: 22 approved drafts (7 wks runway)\n• Best test format: "minivan features luxury brands wish they had"\n• Needs: badge decision to produce launch-week content',
+    act:'9 drafts filed; publishing remains manual (Tier 1)'},
+  product:{nm:'Product',tier:'dorm',tl:'DORMANT',st:'merged into brain until catalog >5 SKUs',last:'—',dir:'—',rep:'—',act:'—'},
+  storefront:{nm:'Storefront',tier:'dorm',tl:'DORMANT',st:'activates at shop launch (Phase 4)',last:'—',dir:'—',rep:'—',act:'—'},
+  customer:{nm:'Customer',tier:'dorm',tl:'DORMANT',st:'activates at shop launch (Phase 4)',last:'—',dir:'—',rep:'—',act:'—'},
+  paid_ads:{nm:'Paid Ads',tier:'dorm',tl:'DORMANT',st:'activates post-revenue (Phase 5)',last:'—',dir:'—',rep:'—',act:'—'},
+  finance:{nm:'Finance',tier:'dorm',tl:'DORMANT',st:'activates post-revenue (Phase 5)',last:'—',dir:'—',rep:'—',act:'—'},
+};
+const grid=document.getElementById('deptGrid');
+Object.entries(DEPTS).forEach(([id,d])=>{
+  const b=document.createElement('button');b.className='dept';
+  b.innerHTML=`<div class="nm">${d.nm}</div><div class="meta">${d.st}${d.last!=='—'?' · '+d.last:''}</div><span class="pill ${d.tier}">${d.tl}</span>`;
+  b.onclick=()=>showDept(id);grid.appendChild(b);
+});
+function showDept(id){
+  const d=DEPTS[id];const det=document.getElementById('deptDetail');
+  grid.style.display='none';det.style.display='block';
+  det.innerHTML=`<button class="back" onclick="backDepts()">← all departments</button>
+    <div class="card"><h2>${d.nm} <span class="pill ${d.tier}">${d.tl}</span></h2>
+    <div class="kv"><div class="k">standing directive</div><div class="v">${d.dir}</div></div>
+    <div class="kv"><div class="k">latest report (W31)</div><div class="v">${d.rep}</div></div>
+    <div class="kv"><div class="k">actions taken</div><div class="v">${d.act}</div></div></div>`;
+}
+function backDepts(){document.getElementById('deptDetail').style.display='none';grid.style.display='grid';}
+
+/* ---------- boardroom ---------- */
+const COLORS={brain:'var(--purple)',mi:'var(--blue)',cr:'var(--coral)',fi:'var(--green)',co:'var(--amber)',ceo:'var(--amber)'};
+const NAMES={brain:'Brain · COO',mi:'Market Intel',cr:'Creative',fi:'Finance',co:'Content',ceo:'You · CEO'};
+const AV={brain:'BR',mi:'MI',cr:'CR',fi:'FI',co:'CO',ceo:'CEO'};
+const brLog=document.getElementById('brLog'),brChips=document.getElementById('brChips');
+function say(who,txt,ceo){
+  const m=document.createElement('div');m.className='msg'+(ceo?' ceoMsg':'');
+  m.innerHTML=`<div class="av" style="color:${COLORS[who]}">${AV[who]}</div>
+    <div class="b"><div class="who" style="color:${COLORS[who]}">${NAMES[who]}</div><div class="tx">${txt}</div></div>`;
+  brLog.appendChild(m);m.scrollIntoView({behavior:'smooth',block:'end'});
+}
+function sys(t){const s=document.createElement('div');s.className='sysline';s.textContent=t;brLog.appendChild(s);}
+function dec(t){const s=document.createElement('div');s.className='decis';s.textContent=t;brLog.appendChild(s);s.scrollIntoView({behavior:'smooth',block:'end'});}
+function chips(hint,opts){
+  brChips.innerHTML=`<span class="hint">${hint}</span>`;
+  opts.forEach(o=>{const b=document.createElement('button');if(o.primary)b.className='primary';
+    b.textContent=o.label;b.onclick=()=>{say('ceo',o.label,true);o.go();};brChips.appendChild(b);});
+  brChips.scrollIntoView({behavior:'smooth',block:'end'});
+}
+function seq(items,then){brChips.innerHTML='';let i=0;
+  (function n(){ if(i<items.length){const[w,t]=items[i];i++;say(w,t);setTimeout(n,650);}else then&&then();})();}
+
+function startDebate(){
+  document.getElementById('brIntro').style.display='none';brLog.innerHTML='';
+  sys('brain boardroom "September soft launch (3 SKUs) vs November full launch (10 SKUs)" — convening 4 departments…');
+  seq([
+    ['brain','Topic on the table. Ground rules per charter: argue for the company from your vantage, dissent on the record, no consensus-seeking. Opening positions — Market Intel first.'],
+    ['mi','Launch September. Two competitors entered our space in six weeks; the identity is being claimed while we polish. And real sales data beats every report I can write — three SKUs live teaches us more than three more months of my research.'],
+    ['cr','Wait for November. The badge isn\u2019t finalized, and the badge IS the business — we said that in the charter. A first impression with a half-baked flagship doesn\u2019t get a second chance. I\u2019d rather launch late than launch forgettable.'],
+    ['fi','September, and it\u2019s not close. POD means zero inventory risk — worst case on a weak drop is a few hundred dollars and priceless unit-economics data. Every pre-revenue month is pure burn. Creative\u2019s risk is real but it\u2019s a quality gate, not a calendar problem.'],
+    ['co','Split position. The bank supports a September soft launch today, but November gifting content would hit harder. Recommendation: frame September as a numbered "founding member" drop — small on purpose — then the full catalog rides the gifting wave in November. Scarcity becomes the story instead of the compromise.'],
+    ['brain','Synthesis. Three of four favor early, but Creative\u2019s objection is the only charter-level one, so it becomes the gate, not a veto: September soft launch, 3 SKUs, founding-member framing — conditional on flagship badge approval by August 15. If the badge slips, the launch slips with it. November full catalog proceeds either way. That\u2019s my recommendation.'],
+  ], ()=> chips('question the room, or rule',[
+    {label:'Challenge Finance: what if early reviews are bad?',go:()=>seq([
+      ['fi','Then we learned it for $300 instead of $3,000. Bad reviews on a 3-SKU founding drop are contained — we fold them into the November relaunch story. Bad reviews on a 10-SKU flagship launch are the brand\u2019s first chapter. Early failure is cheaper here, which is exactly why POD is our model.'],
+      ['cr','I\u2019ll add the counterweight since it\u2019s my dissent: reviews aren\u2019t the risk I\u2019m raising — screenshots are. A weak badge circulating as our identity costs more than any refund. The August 15 gate covers me. If it\u2019s real, I\u2019m in.'],
+    ],()=>ruleChips())},
+    {label:'Ask Creative: what makes September viable?',go:()=>seq([
+      ['cr','Three things: the badge ruling this Friday, mockups on physical samples by August 1 — not just renders — and veto power on launch photography. Give me those and September is a launch I\u2019ll defend, not one I\u2019m dragged into.'],
+      ['brain','All three are compatible with the plan. I\u2019d fold them into the launch directive as conditions.'],
+    ],()=>ruleChips())},
+    ...ruleOpts()
+  ]));
+}
+function ruleOpts(){return [
+    {label:'Adopt the brain\u2019s plan',primary:true,go:()=>{
+      dec('✓ DEC-033 logged · Sept founding-member drop (3 SKUs) gated on badge approval by Aug 15 · Nov full catalog · Creative\u2019s conditions attached · dissent recorded: Creative (conditional)');
+      sys('directives updated: creative.md, content.md, market_intel.md · minutes written to hq/meetings/2026-W31-boardroom-launch.md');
+      chips('boardroom closed',[{label:'Open another topic',primary:true,go:()=>{document.getElementById('brIntro').style.display='block';brLog.innerHTML='';brChips.innerHTML='';}}]);
+    }},
+    {label:'Wait for November',go:()=>{
+      dec('✓ DEC-033 logged · full launch November · dissents recorded: Market Intel, Finance · brain notes: revisit if a third competitor enters');
+      sys('minutes written to hq/meetings/2026-W31-boardroom-launch.md');
+      chips('boardroom closed',[{label:'Open another topic',primary:true,go:()=>{document.getElementById('brIntro').style.display='block';brLog.innerHTML='';brChips.innerHTML='';}}]);
+    }},
+];}
+function ruleChips(){chips('your ruling',ruleOpts());}
+</script>
+</body>
+</html>

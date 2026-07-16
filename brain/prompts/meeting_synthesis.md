@@ -12,6 +12,10 @@ ruled, notable CEO reasoning. Written for a future reader (or agent)
 reconstructing why things happened. Include items that were skipped or
 rejected — the record of what was NOT approved matters as much as what was.
 
+Where a ruling includes a "Discussion during ruling" block, weave its
+substance into the minutes and reflect it in that decision's Rationale —
+the sidebar conversation is part of the record, not an aside.
+
 ## Decision Log Entries
 
 One block per ruling that produced an actual decision (approved or

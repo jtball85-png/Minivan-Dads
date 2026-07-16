@@ -19,9 +19,31 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
 from brain.config import BrainConfig, load_config
 from brain.governance import DECISION_HEADING_RE, apply_governance
 from brain.hq import HQ
+from brain.interaction import Exchange, prompt_with_freetext, render_exchanges
 from brain.llm import LLM
 from brain.models import DecisionEntry, MeetingRuling
 from brain.prompts import build_system_blocks
+
+
+def make_discusser(llm: LLM, config: BrainConfig, hq: HQ, item_context: str):
+    """Returns a discuss(ceo_text, history) callable for prompt_with_freetext.
+
+    System blocks are built once (block 1 stays prompt-cached across turns);
+    the running exchange history rides inside each user message, so llm.py's
+    single-turn call shape is unchanged.
+    """
+    system_blocks = build_system_blocks(config, hq, "discussion.md")
+
+    def discuss(ceo_text: str, history: list[Exchange]) -> str:
+        prior = history[:-1]  # last entry is the message being sent now
+        user_message = (
+            f"Item currently on the table:\n\n{item_context}\n\n"
+            + (f"Conversation so far:\n{render_exchanges(prior)}\n\n" if prior else "")
+            + f"CEO: {ceo_text}"
+        )
+        return llm.call(system_blocks, user_message, max_tokens=config.max_tokens["discussion"])
+
+    return discuss
 
 DECISION_RECORD_RE = re.compile(
     r"^## Decision Record\s*\n"
@@ -75,8 +97,12 @@ def cmd_ask(hq: HQ, llm: LLM, config: BrainConfig, question: str) -> None:
 
     m = DECISION_RECORD_RE.search(answer)
     if m:
-        confirm = input("\nLog this as a decision? [y/N] ").strip().lower()
-        if confirm == "y":
+        confirm = prompt_with_freetext(
+            "\nLog this as a decision? [y]es / [n]o — or keep talking: ",
+            {"y": "yes", "n": "no"},
+            discuss=make_discusser(llm, config, hq, m.group(0)),
+        )
+        if confirm == "yes":
             departments_raw = m.group("departments").strip()
             departments = (
                 [d.strip() for d in departments_raw.split(",") if d.strip() and d.strip().lower() != "none"]
@@ -150,8 +176,16 @@ def _split_sections(markdown: str, heading_re: re.Pattern) -> dict[str, str]:
     return sections
 
 
-def _collect_rulings(agenda: str) -> list[MeetingRuling]:
-    """Walk the agenda's decision blocks interactively, one at a time."""
+RULING_OPTIONS = {"a": "approve", "m": "modify", "r": "reject", "s": "skip"}
+
+
+def _collect_rulings(agenda: str, discusser_factory) -> list[MeetingRuling]:
+    """Walk the agenda's decision blocks interactively, one at a time.
+
+    `discusser_factory(item_context) -> discuss callable` — free text typed at
+    the ruling prompt becomes a sidebar conversation with the brain about the
+    current item, recorded on the ruling.
+    """
     blocks = list(DECISION_HEADING_RE.finditer(agenda))
     if not blocks:
         print("No proposed decisions found in the agenda.")
@@ -167,22 +201,38 @@ def _collect_rulings(agenda: str) -> list[MeetingRuling]:
         print(f"\n--- Item {i + 1} of {len(blocks)} ---")
         print(block_text)
 
-        while True:
-            choice = input("\n[a]pprove / [m]odify / [r]eject / [s]kip: ").strip().lower()
-            if choice in ("a", "m", "r", "s"):
-                break
-            print("Please enter a, m, r, or s.")
+        discussion: list[Exchange] = []
+        action = prompt_with_freetext(
+            "\n[a]pprove / [m]odify / [r]eject / [s]kip — or just talk to the brain: ",
+            RULING_OPTIONS,
+            discuss=discusser_factory(block_text),
+            transcript=discussion,
+        )
 
-        action = {"a": "approve", "m": "modify", "r": "reject", "s": "skip"}[choice]
         note = ""
         if action == "modify":
             note = input("Your modification/ruling: ").strip()
         elif action == "reject":
             note = input("Why (for the record, optional): ").strip()
 
-        rulings.append(MeetingRuling(item_title=title, action=action, ceo_note=note))
+        rulings.append(
+            MeetingRuling(item_title=title, action=action, ceo_note=note, discussion=discussion)
+        )
 
     return rulings
+
+
+def _render_rulings(rulings: list[MeetingRuling]) -> str:
+    """Render collected rulings (with any sidebar discussion) for synthesis."""
+    parts = []
+    for r in rulings:
+        line = f"- {r.item_title}: {r.action.upper()}"
+        if r.ceo_note:
+            line += f" — CEO note: {r.ceo_note}"
+        if r.discussion:
+            line += "\n  Discussion during ruling:\n" + render_exchanges(r.discussion, indent="    ")
+        parts.append(line)
+    return "\n".join(parts)
 
 
 def cmd_meeting(hq: HQ, llm: LLM, config: BrainConfig) -> None:
@@ -195,15 +245,14 @@ def cmd_meeting(hq: HQ, llm: LLM, config: BrainConfig) -> None:
     agenda = agenda_path.read_text(encoding="utf-8")
     print(f"=== Board Meeting — {week} ===")
 
-    rulings = _collect_rulings(agenda)
+    rulings = _collect_rulings(
+        agenda, discusser_factory=lambda ctx: make_discusser(llm, config, hq, ctx)
+    )
     if not rulings:
         print("Nothing to record; no minutes written.")
         return
 
-    rulings_text = "\n".join(
-        f"- {r.item_title}: {r.action.upper()}" + (f" — CEO note: {r.ceo_note}" if r.ceo_note else "")
-        for r in rulings
-    )
+    rulings_text = _render_rulings(rulings)
     user_message = (
         f"The {week} board meeting is over. Here is the agenda:\n\n{agenda}\n\n"
         f"---\n\nThe CEO's rulings:\n\n{rulings_text}\n\n"
@@ -327,31 +376,130 @@ def cmd_directive(hq: HQ, llm: LLM, config: BrainConfig, department: str) -> Non
         return
 
     new_content = fence_m.group(1).strip() + "\n"
-    confirm = input(f"\nWrite this directive to hq/directives/{department}.md? [y/N] ").strip().lower()
-    if confirm == "y":
+    confirm = prompt_with_freetext(
+        f"\nWrite this directive to hq/directives/{department}.md? [y]es / [n]o — or keep talking: ",
+        {"y": "yes", "n": "no"},
+        discuss=make_discusser(
+            llm, config, hq,
+            f"Proposed new directive for {department}:\n\n{new_content}\n\n"
+            f"CEO's original change request:\n\n{changes}",
+        ),
+    )
+    if confirm == "yes":
         path = hq.write_directive(department, new_content)
         print(f"Written: {path}")
     else:
-        print("Not written.")
+        print("Not written. (To refine it, run `brain directive` again with the adjusted ask.)")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI parser. Pure and importable — the dashboard's Commands
+    tab is generated from this parser so the reference can never drift."""
+    fmt = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(
+        prog="brain",
+        formatter_class=fmt,
+        description=(
+            "The Minivan Dads COO.\n\n"
+            "The weekly rhythm:\n"
+            "  1. Department reports land in hq/reports/{dept}/{week}.md\n"
+            "  2. brain ingest    -> writes this week's board-meeting agenda\n"
+            "  3. brain meeting   -> you rule; minutes/decisions/directives land in HQ\n"
+            "  4. brain status    -> any morning, the 30-second company glance\n\n"
+            "At every decision prompt, listed options are shortcuts only — type\n"
+            "anything else and it becomes a conversation with the brain."
+        ),
+        epilog="Every state change the brain makes is a file write in hq/ you can read in git.",
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    subparsers.add_parser(
+        "status",
+        help="Company dashboard (no API call)",
+        formatter_class=fmt,
+        description=(
+            "The 30-second glance. Shows, without any model call:\n"
+            "  - which departments filed this week's report (filed/missing/dormant)\n"
+            "  - open escalations, urgent ones first and loud\n"
+            "  - last board meeting date\n"
+            "  - directives gone stale (not updated in 30+ days)\n\n"
+            "Phase 1 has no push alerts: urgent items surface here, when you run this."
+        ),
+        epilog="Example: brain status",
+    )
+
+    ask_parser = subparsers.add_parser(
+        "ask",
+        help="Consult the brain ad hoc (full company context)",
+        formatter_class=fmt,
+        description=(
+            "Drop by the COO's office. Loads the charter, tier definitions, all\n"
+            "directives, recent reports, the last 20 decisions, and the open\n"
+            "escalation queue — then answers your question against them.\n\n"
+            "If the answer amounts to a ruling, the brain drafts a Decision Record\n"
+            "and asks before logging it to hq/decisions/log.md."
+        ),
+        epilog='Example: brain ask "should we expand the watch list to TikTok Shop?"',
+    )
+    ask_parser.add_argument("question", help="The question to ask")
+
+    subparsers.add_parser(
+        "ingest",
+        help="Synthesize reports into this week's agenda",
+        formatter_class=fmt,
+        description=(
+            "Reads every department report filed since the last board meeting and\n"
+            "writes hq/meetings/{week}-agenda.md containing:\n"
+            "  - a one-paragraph synthesis per department (honest about gaps)\n"
+            "  - cross-department conflicts and opportunities\n"
+            "  - proposed decisions tagged [BRAIN DECIDES] or [CEO REQUIRED]\n"
+            "    (tags are verified in code — money/brand/legal/irreversible always\n"
+            "    escalate to you, whatever the model wrote)\n"
+            "  - the escalation queue triaged urgent / this-meeting / defer\n\n"
+            "Run it Friday morning, or whenever reports are in."
+        ),
+        epilog="Example: brain ingest",
+    )
+
+    subparsers.add_parser(
+        "meeting",
+        help="Hold the board meeting on this week's agenda",
+        formatter_class=fmt,
+        description=(
+            "The weekly 20-minute ritual. Walks you through the agenda item by\n"
+            "item; rule with a/m/r/s or type anything to discuss the item with the\n"
+            "brain first. When the meeting closes it writes:\n"
+            "  - hq/meetings/{week}-minutes.md\n"
+            "  - appended decision-log entries (with your reasoning)\n"
+            "  - updated department directives\n"
+            "  - resolved escalations moved to resolved.md\n\n"
+            "Requires this week's agenda — run `brain ingest` first."
+        ),
+        epilog="Example: brain meeting",
+    )
+
+    directive_parser = subparsers.add_parser(
+        "directive",
+        help="Create or revise a department's standing orders",
+        formatter_class=fmt,
+        description=(
+            "Shows the department's current directive, takes your changes in plain\n"
+            "language, and drafts the full replacement — validated against the\n"
+            "charter and the department's authority tier.\n\n"
+            "Tier changes are refused here by design: promotions and demotions are\n"
+            "board decisions, made at a meeting and logged."
+        ),
+        epilog="Example: brain directive market_intel",
+    )
+    directive_parser.add_argument("department", help="Department name (e.g. market_intel)")
+
+    return parser
 
 
 def cli() -> None:
     load_dotenv()
 
-    parser = argparse.ArgumentParser(prog="brain", description="Minivan Dads COO")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    subparsers.add_parser("status", help="Show the company dashboard")
-
-    ask_parser = subparsers.add_parser("ask", help="Ask the brain a question")
-    ask_parser.add_argument("question", help="The question to ask")
-
-    subparsers.add_parser("ingest", help="Synthesize reports into this week's agenda")
-    subparsers.add_parser("meeting", help="Hold the board meeting on this week's agenda")
-
-    directive_parser = subparsers.add_parser("directive", help="Create or revise a department directive")
-    directive_parser.add_argument("department", help="Department name (e.g. market_intel)")
-
+    parser = build_parser()
     args = parser.parse_args()
 
     config = load_config()

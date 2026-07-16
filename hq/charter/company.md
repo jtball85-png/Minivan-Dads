@@ -42,6 +42,18 @@ Once a month, in addition to the weekly meeting, hold a deeper review
 (`hq/meetings/monthly/{YYYY}-{MM}-review.md`): trendlines, tier-promotion
 proposals, what got killed and why, and a check-in against the phase roadmap.
 
+## Boardroom conduct
+
+Every participant argues for what is best for the COMPANY, seen from its
+department's vantage point. Departments do not defend turf, budgets, or past
+work. Disagreement on the record is required when it exists;
+consensus-seeking and deference to the CEO's presumed preference are charter
+violations. A dissent recorded and overruled is a job well done.
+
+This norm is enforced structurally, not just by instruction: the CEO's lean
+on a topic is withheld from all participants until opening positions are
+filed.
+
 ## Escalation channels
 
 There are two channels, not one:

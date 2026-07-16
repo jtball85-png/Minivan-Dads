@@ -1,4 +1,4 @@
-anthropic>=0.40
-python-dotenv
-PyYAML
+# Install the brain package (editable) plus dev tools:
+#   .venv/Scripts/pip install -r requirements.txt
+-e .
 pytest

@@ -56,3 +56,6 @@ class MeetingRuling:
     item_title: str
     action: str  # "approve" | "modify" | "reject" | "skip"
     ceo_note: str = ""
+    # Sidebar conversation held while ruling on this item (interaction.Exchange
+    # objects; typed loosely here to keep models.py dependency-free).
+    discussion: list = field(default_factory=list)

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>brain meeting — interactive demo</title>
+<style>
+  :root{
+    --bg:#101216;         /* asphalt at night */
+    --panel:#171a20;
+    --ink:#d8d4c6;        /* warm phosphor */
+    --dim:#7d8291;
+    --amber:#f2b94b;      /* headlights — CEO required / prompts */
+    --green:#5ec9a0;      /* brain decides / success */
+    --coral:#e8836b;      /* warnings */
+    --line:#262b34;
+    --chip:#1e232c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg);
+    font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:var(--ink);
+    display:flex;justify-content:center;
+    min-height:100vh;padding:16px 10px;
+  }
+  .term{
+    width:100%;max-width:680px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    display:flex;flex-direction:column;
+    box-shadow:0 12px 40px rgba(0,0,0,.5);
+  }
+  .tabbar{
+    display:flex;align-items:center;gap:8px;
+    padding:9px 12px;border-bottom:1px solid var(--line);
+    background:#12141a;
+  }
+  .dot{width:10px;height:10px;border-radius:50%;background:#3a4150}
+  .dot:nth-child(1){background:#5d4038}
+  .dot:nth-child(2){background:#5a5138}
+  .dot:nth-child(3){background:#3d5244}
+  .tabtitle{margin-left:6px;font-size:11px;color:var(--dim);letter-spacing:.03em}
+  .meter{margin-left:auto;font-size:11px;color:var(--amber)}
+  .log{
+    padding:16px 14px 8px;
+    font-size:12.5px;line-height:1.75;
+    overflow-y:auto;flex:1;min-height:340px;max-height:62vh;
+    white-space:pre-wrap;word-break:break-word;
+  }
+  .l{display:block}
+  .cmd{color:var(--ink)}
+  .cmd::before{content:"$ ";color:var(--green)}
+  .sys{color:var(--dim)}
+  .hdr{color:var(--ink);font-weight:700;letter-spacing:.04em}
+  .ceo{color:var(--amber);font-weight:700}
+  .auto{color:var(--green);font-weight:700}
+  .brain{color:var(--ink)}
+  .brain::before{content:"brain ▸ ";color:var(--dim)}
+  .you{color:var(--amber)}
+  .you::before{content:"you   ▸ ";color:var(--amber)}
+  .ok{color:var(--green)}
+  .warn{color:var(--coral)}
+  .rule{color:var(--line)}
+  .cursor{display:inline-block;width:8px;height:14px;background:var(--amber);
+    vertical-align:-2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .choices{
+    padding:12px 14px 16px;border-top:1px solid var(--line);
+    display:flex;flex-wrap:wrap;gap:8px;background:#13161c;
+  }
+  .choices .hint{width:100%;font-size:10.5px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+  button.chip{
+    font-family:inherit;font-size:12.5px;color:var(--ink);
+    background:var(--chip);border:1px solid var(--line);
+    border-bottom-width:3px;border-radius:7px;
+    padding:9px 14px;cursor:pointer;
+  }
+  button.chip:active{transform:translateY(1px);border-bottom-width:2px}
+  button.chip:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  button.chip.primary{color:var(--amber);border-color:#4a3d22}
+  @media (prefers-reduced-motion: reduce){.cursor{animation:none}}
+</style>
+</head>
+<body>
+<div class="term" role="application" aria-label="Interactive demo of a brain board meeting">
+  <div class="tabbar" aria-hidden="true">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="tabtitle">brain — minivan-dads — zsh</span>
+    <span class="meter" id="meter">decisions 0</span>
+  </div>
+  <div class="log" id="log" aria-live="polite"></div>
+  <div class="choices" id="choices"></div>
+</div>
+
+<script>
+const log = document.getElementById('log');
+const choicesEl = document.getElementById('choices');
+const meter = document.getElementById('meter');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let decisions = 0, queue = [], typing = false;
+
+function bump(){ decisions++; meter.textContent = 'decisions ' + decisions; }
+
+function addLine(cls, text, done){
+  const el = document.createElement('span');
+  el.className = 'l ' + cls;
+  log.appendChild(el);
+  if (reduced){ el.textContent = text; log.scrollTop = log.scrollHeight; done(); return; }
+  let i = 0;
+  const cur = document.createElement('span'); cur.className='cursor';
+  el.appendChild(cur);
+  const speed = cls==='sys'||cls==='rule' ? 4 : 10;
+  (function tick(){
+    if(i < text.length){
+      cur.before(document.createTextNode(text.slice(i, i+3)));
+      i += 3;
+      log.scrollTop = log.scrollHeight;
+      setTimeout(tick, speed);
+    } else { cur.remove(); done(); }
+  })();
+}
+
+function play(lines, then){
+  typing = true; choicesEl.innerHTML='';
+  let i=0;
+  (function next(){
+    if(i < lines.length){
+      const [cls,text] = lines[i]; i++;
+      addLine(cls, text, ()=>setTimeout(next, reduced?0:120));
+    } else { typing=false; then && then(); }
+  })();
+}
+
+function offer(hint, opts){
+  choicesEl.innerHTML='';
+  const h=document.createElement('span'); h.className='hint'; h.textContent=hint;
+  choicesEl.appendChild(h);
+  opts.forEach(o=>{
+    const b=document.createElement('button'); b.className='chip'+(o.primary?' primary':'');
+    b.textContent=o.label;
+    b.onclick=()=>{ if(typing) return;
+      play([['you', o.label.toLowerCase()]], ()=>o.go());
+    };
+    choicesEl.appendChild(b);
+  });
+}
+
+const RULE = ['rule','────────────────────────────────────────'];
+
+function boot(){
+  play([
+    ['cmd','brain meeting'],
+    ['sys','loading HQ context… charter ✓  directives ✓  2 reports ✓  3 escalations ✓'],
+    RULE,
+    ['hdr','BOARD MEETING — Week 31 · 4 agenda items'],
+    RULE,
+  ], item1);
+}
+
+function item1(){
+  play([
+    ['ceo','ITEM 1/4  [CEO REQUIRED]  Trademark'],
+    ['brain','Market Intel flagged a new Etsy shop selling "minivan dad club" hats — 41 sales this month. Our Class 25 word-mark filing is still open on the legal calendar. Recommendation: file this week (~$250–350). This is our only unacceptable risk per charter.'],
+  ], ()=>offer('your ruling — tap to answer', [
+    {label:'Approve', primary:true, go:()=>{ bump(); play([
+      ['ok','✓ logged: DEC-031 · initiate Class 25 filing · rationale: brand-space heating up'],
+      ['sys','added to your action list: file via USPTO or attorney'],
+      RULE], item2); }},
+    {label:'Discuss', go:()=>play([
+      ['brain','Fair question to press on. Their mark is descriptive and different from ours — low legal conflict. The real signal is timing: two minivan-adjacent sellers appeared in six weeks. Filing now costs $350; filing after a competitor does costs the brand. I still recommend approve.'],
+    ], ()=>offer('your ruling', [
+      {label:'Approve', primary:true, go:()=>{ bump(); play([
+        ['ok','✓ logged: DEC-031 · initiate Class 25 filing · rationale noted from discussion'],
+        ['sys','added to your action list: file via USPTO or attorney'],
+        RULE], item2); }},
+      {label:'Defer to next week', go:()=>{ bump(); play([
+        ['warn','◦ logged: DEC-031 · deferred 1 week · brain notes: risk accepted by CEO'],
+        RULE], item2); }},
+    ]))},
+    {label:'Defer', go:()=>{ bump(); play([
+      ['warn','◦ logged: DEC-031 · deferred 1 week · brain notes: risk accepted by CEO'],
+      RULE], item2); }},
+  ]));
+}
+
+function item2(){
+  play([
+    ['auto','ITEM 2/4  [BRAIN DECIDES — confirming]  Market Intel directive'],
+    ['brain','I\u2019m adding Amazon Merch dad-niche bestsellers to Market Intel\u2019s watch list; Etsy coverage alone missed last month\u2019s trend. Within my authority — speak now or it ships in tonight\u2019s directive update.'],
+  ], ()=>offer('confirm or object', [
+    {label:'No objection', primary:true, go:()=>play([
+      ['ok','✓ directive updated: hq/directives/market_intel.md (v6)'],
+      RULE], item3)},
+    {label:'Object', go:()=>play([
+      ['brain','Noted — what\u2019s the concern?'],
+    ], ()=>offer('pick your adjustment', [
+      {label:'Track it, but monthly not weekly', go:()=>play([
+        ['ok','✓ directive updated with monthly Amazon cadence · objection logged'],
+        RULE], item3)},
+      {label:'Skip Amazon entirely', go:()=>play([
+        ['ok','✓ withdrawn · logged as CEO override — I\u2019ll re-raise if Amazon signal strengthens'],
+        RULE], item3)},
+    ]))},
+  ]));
+}
+
+function item3(){
+  play([
+    ['ceo','ITEM 3/4  [CEO REQUIRED]  Flagship badge direction'],
+    ['brain','Creative\u2019s report ranks two finalists for the launch badge: (a) chrome-emblem style, like a vehicle badge — highest scored for "swagger wagon" irony; (b) embroidered patch style — better for hat-first strategy, premium feel. This is brand identity, so it\u2019s your call, not mine.'],
+  ], ()=>offer('your ruling', [
+    {label:'Chrome emblem', go:()=>{ bump(); play([
+      ['ok','✓ logged: DEC-032 · flagship = chrome emblem · Creative directed to produce Printful mockups by Wed'],
+      RULE], item4); }},
+    {label:'Embroidered patch', go:()=>{ bump(); play([
+      ['ok','✓ logged: DEC-032 · flagship = embroidered patch · Creative directed to produce Printful mockups by Wed'],
+      RULE], item4); }},
+    {label:'Show me mockups first', primary:true, go:()=>{ bump(); play([
+      ['ok','✓ logged: DEC-032 · decision deferred pending visuals'],
+      ['sys','Creative\u2019s directive updated: 3 mockups per concept in Wednesday\u2019s report'],
+      RULE], item4); }},
+  ]));
+}
+
+function item4(){
+  play([
+    ['auto','ITEM 4/4  [BRAIN DECIDES — confirming]  Content cadence'],
+    ['brain','Content\u2019s bank is at 22 approved drafts. I\u2019m setting cadence to 3 posts/week starting Monday — sustainable for 7 weeks of runway while Creative refills the bank.'],
+  ], ()=>offer('confirm or object', [
+    {label:'No objection', primary:true, go:()=>play([['ok','✓ directive updated: hq/directives/content.md (v3)']], close)},
+    {label:'Object — make it 5/week', go:()=>play([
+      ['brain','I\u2019ll flag the tradeoff: 5/week burns the bank in 4 weeks and quality historically dips past 4. Logging your call with my dissent noted.'],
+      ['ok','✓ directive updated: 5 posts/week · brain dissent on record'],
+    ], close)},
+  ]));
+}
+
+function close(){
+  play([
+    RULE,
+    ['hdr','MEETING CLOSED — ' + decisions + ' decisions logged'],
+    ['sys','written:  hq/meetings/2026-W31-minutes.md'],
+    ['sys','          hq/decisions/log.md (+' + decisions + ' entries)'],
+    ['sys','          2 directives updated'],
+    ['ceo','YOUR ACTION LIST'],
+    ['brain','1. File the trademark (or confirm deferral stands)'],
+    ['brain','2. Review Wednesday\u2019s badge mockups — 2-minute reply, not a meeting'],
+    ['sys','next board meeting: Friday 08:00 · elapsed today: 14 min'],
+  ], ()=>offer('demo complete', [
+    {label:'Run the meeting again', primary:true, go:()=>{ decisions=0; meter.textContent='decisions 0'; log.innerHTML=''; boot(); }},
+  ]));
+}
+
+boot();
+</script>
+</body>
+</html>
