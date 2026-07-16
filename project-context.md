@@ -1,5 +1,5 @@
 # Project: Minivan Dads — The Brain (COO)
-Last updated: 2026-07-15 by Claude Code
+Last updated: 2026-07-16 by Claude Code
 
 ## What this project is
 Minivan Dads Inc. is a print-on-demand apparel brand (Printful catalog, "Old Guys Rule" playbook) targeting minivan-driving dads, aiming for $200k+/yr net income or a seven-figure exit. This project is "The Brain" — Phase 1 of a multi-agent company system: a CLI orchestrator (COO) plus HQ, a git-diffable Markdown filesystem that is the company's single source of truth. Future department agents (Market Intel, Creative, Content, Product, Storefront, Customer, Paid Ads, Finance) will read directives from and write reports to HQ in later phases — not built yet, but the Phase 1 design must not box them out.
@@ -46,12 +46,14 @@ The CEO (human) runs CLI commands against HQ:
 Phase 1 complete and acceptance-tested: HQ + all five brain commands, plus the §7 additions from the 7/16 specs — free-text-everywhere CLI with `brain` console script, executor framework (registry/limits/capability ladder/rollback, fake connectors only), boardroom protocol (CLI + dashboard, honesty norm enforced structurally), and the CEO dashboard (four tabs, streaming ask chat, live boardroom). Phase 2 is live: market_intel is active at Tier 0 with a real directive, running Thursday nights via GitHub Actions (secret set, workflow active); its first live report and escalation are in HQ. Phase 3 (Creative + Content) is gated on the Phase 2 exit criteria — a directive change visibly changing the next report, plus a hard shop-open date — which need real calendar weeks and CEO work, not more code. Handoff docs live under `docs/specs/`; roadmap also at `hq/charter/roadmap.md`. 174 tests passing.
 
 ## Where we left off
-Last commit: e056da5 — Implement brain directive command; Phase 1 CLI surface complete (increment 5)
-In progress: none (only untracked .claude/ local config, intentionally not committed)
+Last commit: 65b5469 — Board records: naming/trademark boardroom session (CEO-run)
+In progress: none
 Branch: main
 
 ## What's next
-- [ ] Increment 6: README usage section + governance keyword-list dogfooding pass — Claude Code
+- [ ] Friday: check Actions tab for the first scheduled market_intel run (ESC-003), run #ingest + #meeting, rule on ESC-002 — CEO (dashboard)
+- [ ] Next week: change market_intel's directive at a meeting and confirm the following Thursday's report reflects it — the Phase 2 exit test
+- [ ] CEO-owned: Class 25 trademark filing, name/domain/handle lockdown, hard shop-open date before Phase 3
 
 ## File structure
 ```
@@ -97,5 +99,5 @@ Browser tasks, desktop automation, file management.
 Use project-context-updater.html on Cowork-heavy days.
 
 ## Change log
-- 2026-07-15 — Scaffolded HQ + brain skeleton; implemented hq.py/governance.py with 44 passing tests; implemented all five CLI commands (status, ask, ingest, meeting, directive); brief's acceptance test passed end-to-end (commits 6ac7bc9, 57d882b, 3f86e86, 11f91c3, e056da5) — Source: Claude Code
+- 2026-07-16 — Increment 6 polish (142ea6d); §7 additions A–D: free-text CLI + brain console script (0d670c0), executor framework (867bb1a), boardroom (e3a251b), read-only dashboard (d77b0e3); docs to docs/specs (42dddaf); dashboard chat + live boardroom (413eaed, 5367468); Phase 2 launch — market_intel live on GitHub Actions (0126b57, c4ce7e4); docs catch-up (e58fa00); chat env fix (7e7fbf4); one-click launcher + silent-failure defenses (12deb34, 600c466); dashboard command bar #commands/@dept (8b54fac); root cleanup (7354bfc); CLAUDE.md (80430ff); CEO's own boardroom session records committed — Source: Claude Code
 - 2026-07-15 — Project initialized — Source: Claude Code
