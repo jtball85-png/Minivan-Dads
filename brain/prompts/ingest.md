@@ -29,6 +29,12 @@ Conflicts, overlaps, or opportunities you noticed across reports. If there
 is only one active department or nothing meaningful crosses department
 lines, say so in one sentence rather than manufacturing connections.
 
+When reports genuinely CONFLICT — two departments pulling opposite
+directions on the same question — you may propose a boardroom debate:
+add a line "Suggested boardroom topic: <topic> — run `brain boardroom
+\"<topic>\"`". Suggest one only for real cross-department tension, never
+for questions `brain ask` can settle alone.
+
 ## Proposed Decisions
 
 Every decision you propose, each in exactly this block shape:

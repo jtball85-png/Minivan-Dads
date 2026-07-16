@@ -23,6 +23,14 @@ from brain.interaction import Exchange, prompt_with_freetext, render_exchanges
 from brain.llm import LLM
 from brain.models import DecisionEntry, MeetingRuling
 from brain.prompts import build_system_blocks
+from brain.records import (
+    FENCED_BLOCK_RE,
+    RESOLVED_LINE_RE,
+    extract_directive_updates,
+    parse_decision_entries,
+    split_sections,
+    tier_or_status_changed,
+)
 
 
 def make_discusser(llm: LLM, config: BrainConfig, hq: HQ, item_context: str):
@@ -177,20 +185,6 @@ MEETING_OUTPUT_SECTIONS = ["Minutes", "Decision Log Entries", "Directive Updates
 MEETING_SECTION_RE = re.compile(
     r"^## (Minutes|Decision Log Entries|Directive Updates|Resolved Escalations)\s*$", re.MULTILINE
 )
-LOG_ENTRY_HEADING_RE = re.compile(r"^### (.+)$", re.MULTILINE)
-RESOLVED_LINE_RE = re.compile(r"^(ESC-\d+):\s*(.+)$", re.MULTILINE)
-FENCED_BLOCK_RE = re.compile(r"```(?:markdown|md)?\s*\n(.*?)```", re.DOTALL)
-
-
-def _split_sections(markdown: str, heading_re: re.Pattern) -> dict[str, str]:
-    """Split markdown into {heading: body} on a heading regex."""
-    matches = list(heading_re.finditer(markdown))
-    sections = {}
-    for i, m in enumerate(matches):
-        start = m.end()
-        end = matches[i + 1].start() if i + 1 < len(matches) else len(markdown)
-        sections[m.group(1).strip()] = markdown[start:end].strip()
-    return sections
 
 
 RULING_OPTIONS = {"a": "approve", "m": "modify", "r": "reject", "s": "skip"}
@@ -279,7 +273,7 @@ def cmd_meeting(hq: HQ, llm: LLM, config: BrainConfig) -> None:
     system_blocks = build_system_blocks(config, hq, "meeting_synthesis.md")
     output = llm.call(system_blocks, user_message, max_tokens=config.max_tokens["meeting"])
 
-    sections = _split_sections(output, MEETING_SECTION_RE)
+    sections = split_sections(output, MEETING_SECTION_RE)
     missing = [s for s in MEETING_OUTPUT_SECTIONS if s not in sections]
     if missing:
         # Don't lose the meeting: write the raw output as minutes and stop.
@@ -291,42 +285,31 @@ def cmd_meeting(hq: HQ, llm: LLM, config: BrainConfig) -> None:
     minutes_path = hq.write_minutes(week, f"# Board Meeting Minutes — {week}\n\n{sections['Minutes']}\n")
     print(f"Minutes written: {minutes_path}")
 
-    log_body = sections["Decision Log Entries"]
-    entry_sections = _split_sections(log_body, LOG_ENTRY_HEADING_RE)
-    for title, body in entry_sections.items():
-        fields = dict(re.findall(r"^- ([A-Za-z ]+):\s*(.+)$", body, re.MULTILINE))
-        departments_raw = fields.get("Affected departments", "")
-        departments = [
-            d.strip() for d in departments_raw.split(",")
-            if d.strip() and d.strip().lower() != "none"
-        ]
-        hq.append_decision(
-            DecisionEntry(
-                date=date.today(),
-                title=title,
-                rationale=fields.get("Rationale", ""),
-                decided_by=fields.get("Decided by", "CEO"),
-                departments=departments,
-            )
-        )
-    print(f"Decision log entries appended: {len(entry_sections)}")
+    entries = parse_decision_entries(sections["Decision Log Entries"])
+    for entry in entries:
+        hq.append_decision(entry)
+    print(f"Decision log entries appended: {len(entries)}")
 
-    directive_body = sections["Directive Updates"]
-    if directive_body.strip() != "None.":
-        directive_sections = _split_sections(directive_body, LOG_ENTRY_HEADING_RE)
-        for dept, content in directive_sections.items():
-            dept_key = dept.strip()
-            if dept_key not in hq.list_departments():
-                print(f"  Warning: unknown department {dept_key!r} in directive updates — skipped.")
+    updates, warnings = extract_directive_updates(sections["Directive Updates"], hq.list_departments())
+    for warning in warnings:
+        print(f"  Warning: {warning}.")
+    for dept_key, content in updates.items():
+        try:
+            current = hq.read_directive(dept_key)
+        except FileNotFoundError:
+            current = ""
+        change = tier_or_status_changed(current, content) if current else None
+        if change:
+            # Tier/status moves are explicit board decisions — never applied
+            # as a silent side effect of synthesis. The CEO is here: ratify
+            # in so many words, or it doesn't happen.
+            print(f"\nThe synthesized directive for {dept_key} includes a tier/status "
+                  f"change ({change}). Tier changes are explicit board decisions.")
+            if input(f"Ratify this change for {dept_key} now? [y/N] ").strip().lower() != "y":
+                print(f"  Skipped {dept_key} — raise it as its own agenda item when ready.")
                 continue
-            # Directive content is required to be inside a fenced code block
-            # so its internal ## headings can't collide with anything.
-            fence_m = FENCED_BLOCK_RE.search(content)
-            if not fence_m:
-                print(f"  Warning: directive update for {dept_key} was not in a fenced block — skipped, review minutes manually.")
-                continue
-            hq.write_directive(dept_key, fence_m.group(1).strip() + "\n")
-            print(f"Directive updated: {dept_key}")
+        hq.write_directive(dept_key, content)
+        print(f"Directive updated: {dept_key}")
 
     resolved_body = sections["Resolved Escalations"]
     resolved_count = 0
@@ -407,6 +390,32 @@ def cmd_directive(hq: HQ, llm: LLM, config: BrainConfig, department: str) -> Non
         print(f"Written: {path}")
     else:
         print("Not written. (To refine it, run `brain directive` again with the adjusted ask.)")
+
+
+def cmd_boardroom(hq: HQ, llm: LLM, config: BrainConfig, topic: str,
+                  all_departments: bool = False, depts: str | None = None) -> None:
+    from brain.boardroom import BoardroomSession
+
+    session = BoardroomSession(llm, config, hq, topic)
+    override = [d.strip() for d in depts.split(",")] if depts else None
+    if not session.convene(override_depts=override, all_departments=all_departments):
+        return
+
+    session.run_positions()
+    session.run_rebuttals()
+    session.run_ceo_floor()
+    session.run_synthesis()
+    ruling = session.collect_ruling(
+        discusser_factory=lambda ctx: make_discusser(llm, config, hq, ctx)
+    )
+    summary = session.finalize(ruling)
+
+    print(f"\nTranscript written: {summary['transcript_path']}")
+    print(f"Decision log entries appended: {summary['decisions']}")
+    if summary["directives_updated"]:
+        print(f"Directives updated: {', '.join(summary['directives_updated'])}")
+    for warning in summary["warnings"]:
+        print(f"  Warning: {warning}.")
 
 
 def cmd_rollback(hq: HQ, config: BrainConfig, action_id: str) -> None:
@@ -531,6 +540,31 @@ def build_parser() -> argparse.ArgumentParser:
     )
     directive_parser.add_argument("department", help="Department name (e.g. market_intel)")
 
+    boardroom_parser = subparsers.add_parser(
+        "boardroom",
+        help="Convene a multi-agent debate on a topic",
+        formatter_class=fmt,
+        description=(
+            "Opens a topic for genuine multi-department deliberation. Each\n"
+            "participant is a separate model call with its own department context\n"
+            "— never the brain doing voices — and your lean is withheld until\n"
+            "opening positions are filed (charter honesty norm).\n\n"
+            "Flow: blind positions -> rebuttals (max 2 rounds) -> your floor\n"
+            "(@department to question anyone, bare text talks to the brain,\n"
+            "'done' to move on) -> brain synthesis naming the strongest objection\n"
+            "-> your ruling, logged with named dissents.\n\n"
+            "Cost note: a 5-participant debate is ~12-20 model calls. The brain\n"
+            "declines topics that `brain ask` can answer alone; --all or --depts\n"
+            "overrides its judgment."
+        ),
+        epilog='Example: brain boardroom "September soft launch vs November full launch"',
+    )
+    boardroom_parser.add_argument("topic", help="The question to debate")
+    boardroom_group = boardroom_parser.add_mutually_exclusive_group()
+    boardroom_group.add_argument("--all", action="store_true", dest="all_departments",
+                                 help="Convene every registered department")
+    boardroom_group.add_argument("--depts", help="Comma-separated department list")
+
     rollback_parser = subparsers.add_parser(
         "rollback",
         help="Restore the pre-action snapshot for an executed action",
@@ -575,6 +609,11 @@ def cli() -> None:
     elif args.command == "directive":
         llm = LLM(config)
         cmd_directive(hq, llm, config, args.department)
+    elif args.command == "boardroom":
+        llm = LLM(config)
+        cmd_boardroom(hq, llm, config, args.topic,
+                      all_departments=args.all_departments,
+                      depts=args.depts)
     elif args.command == "rollback":
         cmd_rollback(hq, config, args.action_id)
 

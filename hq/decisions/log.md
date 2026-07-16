@@ -28,3 +28,18 @@ Format per entry:
 - Rationale: Back-to-school is the year's largest minivan-visibility window per market_intel's finding. With creative/content/paid_ads still dormant, no action can be taken now, but the insight is logged so it carries forward to those departments once activated.
 - Decided by: brain (ratified at board meeting)
 - Affected departments: creative, content, paid_ads (future — currently dormant)
+
+## 2026-07-16 — Launch flagship badge with Printful mockups; defer $400 photography spend to post-launch trigger
+- Rationale: Charter pillar 3 ("bold creative, conservative spending") requires testing cheap before spending — a $400 outlay before any sales data is a bet against unproven demand rather than reinvestment against proven demand. Printful mockups are free and sufficient to launch; the $400 spend is deferred until a specific trigger — mockup-stage click-through/add-to-cart meets threshold but conversion-to-sale lags — isolating "presentation is the friction" from "wrong badge/saying/price" as the cause of underperformance. This condition prevents the deferred spend from silently becoming permanent avoidance. Accepted risk: no department has live conversion-rate data for mockups vs. professional photography in this niche; the call rests on charter logic, not empirical certainty, judged acceptable given the small, reversible dollar amount. Dissents: none.
+- Decided by: CEO
+- Affected departments: creative, finance, market_intel
+
+## 2026-07-16 — Trigger metric for photography spend owned by market_intel
+- Rationale: For the deferred $400 spend to be a real, evidence-triggered decision rather than an indefinite deferral, someone must own measuring the specific signal (click-through/add-to-cart vs. conversion-to-sale) from day one of launch. Market_intel is best positioned to track this data and surface when the trigger is met. Dissents: none.
+- Decided by: CEO
+- Affected departments: market_intel
+
+## 2026-07-16 — Launch in September with 3 SKUs, gated on a badge quality checklist
+- Rationale: POD's zero-inventory model means launching doesn't lock in the badge design — a mediocre flagship risks the brand-identity asset the charter calls the one unacceptable failure, but that risk is addressed with a short, concrete pass/fail checklist (thumbnail readability, "would a dad screenshot this" test, no typographic/trademark issues) rather than an open-ended "unarguably nailed" bar with no stopping point. The back-to-school window is real and non-renewable; the checklist gate preserves it while still forcing a genuine quality check before anything goes live. Post-launch, customer reaction becomes real signal for sharpening the design ahead of the next print run, at no financial cost. Dissents: creative (wanted a full hold until the badge is unarguably nailed, not a time-boxed checklist); market_intel (same position as creative — hold until the core identity asset is right, seasonal window not worth the risk).
+- Decided by: CEO
+- Affected departments: creative, finance, market_intel, content

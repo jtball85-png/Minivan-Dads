@@ -355,6 +355,20 @@ class HQ:
         path.write_text(content, encoding="utf-8")
         return path
 
+    def write_boardroom_transcript(self, week_key: str, slug: str, content: str) -> Path:
+        """hq/meetings/{week}-boardroom-{slug}.md; suffixes -2, -3... on
+        collision so a second debate on the same topic never overwrites."""
+        meetings_dir = self._meetings_dir()
+        meetings_dir.mkdir(parents=True, exist_ok=True)
+        base = f"{week_key}-boardroom-{slug}"
+        path = meetings_dir / f"{base}.md"
+        n = 2
+        while path.exists():
+            path = meetings_dir / f"{base}-{n}.md"
+            n += 1
+        path.write_text(content, encoding="utf-8")
+        return path
+
     def write_monthly_review(self, year_month: str, content: str) -> Path:
         path = self._meetings_dir() / "monthly" / f"{year_month}-review.md"
         path.parent.mkdir(parents=True, exist_ok=True)

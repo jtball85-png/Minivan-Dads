@@ -6,12 +6,19 @@ max_tokens:
   meeting: 8192
   directive: 4096
   discussion: 1024
+  # Boardroom caps include adaptive-thinking tokens — keep generous headroom
+  # or replies get truncated mid-sentence (observed at 600).
+  boardroom_position: 2500
+  boardroom_moderator: 1500
+  boardroom_floor: 3000
+  boardroom_synthesis: 8192
 
 effort:
   ask: medium
   ingest: high
   meeting: high
   directive: medium
+  boardroom_synthesis: high
 
 paths:
   hq_root: hq

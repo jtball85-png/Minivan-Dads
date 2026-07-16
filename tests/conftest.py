@@ -29,7 +29,12 @@ def config(tmp_hq_root):
     }
     return BrainConfig(
         model="claude-sonnet-5",
-        max_tokens={"ask": 4096, "ingest": 8192, "meeting": 8192, "directive": 4096},
+        max_tokens={
+            "ask": 4096, "ingest": 8192, "meeting": 8192, "directive": 4096,
+            "discussion": 1024, "boardroom_position": 600,
+            "boardroom_moderator": 800, "boardroom_floor": 1500,
+            "boardroom_synthesis": 8192,
+        },
         effort={"ask": "medium", "ingest": "high", "meeting": "high", "directive": "medium"},
         hq_root=tmp_hq_root,
         prompts_root=tmp_hq_root.parent / "prompts",

@@ -34,7 +34,8 @@ Each block in exactly this shape:
 
 One subsection per department whose standing orders changed as a result of
 this meeting. If no directives changed, write exactly "None." and nothing
-else. Each subsection:
+else. Each subsection's heading is the bare department name
+(`### market_intel`, no braces):
 
 ### {department}
 
