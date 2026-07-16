@@ -6,3 +6,4 @@ __pycache__/
 .venv/
 dashboard.log
 dashboard_startup.log
+.claude/settings.local.json
