@@ -43,7 +43,7 @@ The CEO (human) runs CLI commands against HQ:
 5. `brain directive <department>` — generates/revises a department's standing directive interactively, validated against the charter and tiers.
 
 ## Current status
-Brand new — no code written yet. This session is scaffolding the project's memory/tracking files and initializing git with the GitHub remote. Full build plan and acceptance criteria are defined in `minivan-dads-brain-project-brief.md` and `minivan-dads-phase-roadmap.md` (both in project root; the roadmap should be copied to `hq/charter/roadmap.md` when HQ is scaffolded).
+Brand new — no code written yet. This session is scaffolding the project's memory/tracking files and initializing git with the GitHub remote. Full build plan and acceptance criteria are defined in the handoff docs under `docs/specs/` (brief, roadmap, action-layer spec, boardroom/dashboard spec, progress summary, UX demos); the roadmap also lives at `hq/charter/roadmap.md`.
 
 ## Where we left off
 Last commit: e056da5 — Implement brain directive command; Phase 1 CLI surface complete (increment 5)
@@ -56,13 +56,16 @@ Branch: main
 ## File structure
 ```
 /project-root
-  /hq              → charter, directives, reports, decisions, escalations, meetings (source of truth)
-  /brain           → main.py (CLI entrypoint), hq.py (HQ read/write layer), prompts/, config.yaml
+  /hq              → charter, directives, reports, decisions, escalations, meetings, actions (source of truth)
+  /brain           → CLI (main.py), hq.py, governance, executor, boardroom, dashboard/, prompts/, config.yaml
   /docs            → reference guides
+  /docs/specs      → handoff docs: brief, roadmap, action-layer + boardroom specs, progress summary, UX demos
   /reference       → reference material
+  /tests           → pytest suite (no API calls)
   .env.example     → ANTHROPIC_API_KEY=
-  requirements.txt → Python dependencies
-  README.md        → template/project readme
+  pyproject.toml   → package + `brain` console script
+  requirements.txt → -e . + dev tools
+  README.md        → project readme
 ```
 
 ## Environment and credentials
