@@ -121,6 +121,98 @@ async function loadCommands() {
   });
 }
 
+/* ---------- shared SSE reader ---------- */
+async function readSSE(response, onEvent) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let idx;
+    while ((idx = buf.indexOf("\n\n")) >= 0) {
+      const chunk = buf.slice(0, idx);
+      buf = buf.slice(idx + 2);
+      if (chunk.startsWith("data: ")) onEvent(JSON.parse(chunk.slice(6)));
+    }
+  }
+}
+
+/* ---------- chat message rendering ---------- */
+const WHO = {
+  ceo:   { label: "You · CEO", av: "CEO", color: "var(--amber)" },
+  brain: { label: "Brain · COO", av: "BR", color: "var(--purple)" },
+};
+function chatMsg(container, who, text) {
+  const w = WHO[who] || { label: who, av: who.slice(0, 2).toUpperCase(), color: "var(--blue)" };
+  const m = document.createElement("div");
+  m.className = "msg" + (who === "ceo" ? " ceoMsg" : "");
+  m.innerHTML = `<div class="av" style="color:${w.color}">${esc(w.av)}</div>
+    <div class="b"><div class="who" style="color:${w.color}">${esc(w.label)}</div>
+    <div class="tx"></div></div>`;
+  m.querySelector(".tx").textContent = text;
+  container.appendChild(m);
+  m.scrollIntoView({ behavior: "smooth", block: "end" });
+  return m.querySelector(".tx");
+}
+
+/* ---------- ask the brain ---------- */
+$("askForm").onsubmit = async (ev) => {
+  ev.preventDefault();
+  const input = $("askInput");
+  const question = input.value.trim();
+  if (!question) return;
+  input.value = "";
+  $("askSend").disabled = true;
+  $("askChips").innerHTML = "";
+
+  chatMsg($("askLog"), "ceo", question);
+  const tx = chatMsg($("askLog"), "brain", "…");
+  tx.textContent = "";
+
+  try {
+    const response = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    let record = null;
+    await readSSE(response, (e) => {
+      if (e.delta) tx.textContent += e.delta;
+      if (e.done) record = e.decision_record;
+    });
+    if (record) offerDecisionLog(record);
+  } catch (err) {
+    tx.textContent += `\n[error: ${err.message} — is the API key set? Chat needs it; the rest of the console doesn't.]`;
+  } finally {
+    $("askSend").disabled = false;
+    input.focus();
+  }
+};
+
+function offerDecisionLog(record) {
+  const chips = $("askChips");
+  chips.innerHTML = `<span class="hint">the brain drafted a decision record — log it?</span>`;
+  const logBtn = document.createElement("button");
+  logBtn.className = "primary";
+  logBtn.textContent = `Log it: ${record.title}`;
+  logBtn.onclick = async () => {
+    await fetch("/api/ask/log-decision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(record),
+    });
+    chips.innerHTML = `<div class="decis">✓ logged to hq/decisions/log.md</div>`;
+    loadOverview();
+  };
+  const dismissBtn = document.createElement("button");
+  dismissBtn.textContent = "Dismiss";
+  dismissBtn.onclick = () => (chips.innerHTML = "");
+  chips.append(logBtn, dismissBtn);
+}
+
 loadOverview();
 loadDepartments();
 loadBoardroom();

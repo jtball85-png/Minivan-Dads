@@ -34,9 +34,14 @@
       <h2>This week, from the brain</h2>
       <div id="agenda"><span class="dim">loading…</span></div>
     </div>
-    <div class="card chat-placeholder">
+    <div class="card">
       <h2>Ask the brain</h2>
-      <input type="text" disabled placeholder="brain ask — coming online in the next increment. Use the CLI for now.">
+      <div id="askLog"></div>
+      <div id="askChips" class="chiprow"></div>
+      <form id="askForm" class="chatform">
+        <input type="text" id="askInput" placeholder='Ask anything — full company context is loaded. (Voice: use your OS dictation key.)' autocomplete="off">
+        <button type="submit" id="askSend">ask</button>
+      </form>
     </div>
   </section>
 

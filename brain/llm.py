@@ -21,3 +21,14 @@ class LLM:
             messages=[{"role": "user", "content": user_message}],
         )
         return "".join(block.text for block in response.content if block.type == "text")
+
+    def stream(self, system_blocks: list[dict], user_message: str, max_tokens: int):
+        """Yield text deltas as they arrive — for the dashboard's chat
+        surfaces. Same request shape as call()."""
+        with self.client.messages.stream(
+            model=self.config.model,
+            max_tokens=max_tokens,
+            system=system_blocks,
+            messages=[{"role": "user", "content": user_message}],
+        ) as stream:
+            yield from stream.text_stream

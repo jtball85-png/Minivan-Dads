@@ -429,7 +429,16 @@ def cmd_dashboard(hq: HQ, config: BrainConfig, host: str, port: int) -> None:
         return
 
     app = create_app(config, hq)
-    print(f"CEO console: http://{host}:{port}  (Ctrl-C to stop)")
+
+    # Chat surfaces need the model; the read-only view must work without it.
+    try:
+        from brain.dashboard.chat import register_chat_routes
+        register_chat_routes(app, config, hq, make_llm=lambda: LLM(config))
+        chat_note = "chat enabled"
+    except Exception as e:
+        chat_note = f"chat disabled ({e})"
+
+    print(f"CEO console: http://{host}:{port}  ({chat_note}; Ctrl-C to stop)")
     uvicorn.run(app, host=host, port=port, log_level="warning")
 
 
