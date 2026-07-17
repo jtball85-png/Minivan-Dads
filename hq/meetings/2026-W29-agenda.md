@@ -4,7 +4,7 @@
 
 ### market_intel
 
-Market Intel filed a substantial report this cycle covering all standing-order items. Key points: (1) the name-collision search remains clean — only descriptive marketplace noise found, reinforcing the already-closed name question, but the "descriptive phrase is common" texture is exactly what counsel will need for registrability assessment; (2) a hard tooling gap is confirmed — Tier 0 search access cannot perform live handle/domain availability checks on Instagram, TikTok, X, Etsy, or registrars, so "no adverse hits found" is absence-of-evidence, not confirmed availability (this is the subject of open ESC-004); (3) ITU trademark filing mechanics are now quantified in concrete detail — $350/class base fee, $150/class Statement of Use, $125/class per six-month extension (renewable up to ~3 years), versus a $200/class penalty for free-text filing errors that are non-refundable if rejected — directly unblocking the deferred filing-timing decision, though the department is explicit that wording/descriptiveness judgment calls belong to outside counsel, not this desk; (4) a ranked backup handle/domain shortlist was produced (minivandadsclub, swaggerwagondads, minivandadco, minivandads.shop) but is explicitly flagged as unvetted pending creative's sanity-check, consistent with the standing order and the prior decision to hold that check until creative is activated. No escalations raised this cycle beyond the three already open.
+This cycle's report delivers real diligence against the reopened naming/trademark question but does not yet fulfill the full standing order. Confirmed findings: minivandads.com is registered to an unidentified third party with no visible competing brand use (unresolved — registrant identity and intent unknown); minivandads.co and minivandads.shop are both confirmed available now as literal fallbacks. A close-variant backup list was ranked (MinivanDadClub, MinivanDadCrew, TheMinivanDads — domain check pending retry, MinivanDadGang — flagged for a voice gut-check over the "gang" connotation) — but this is not the 5–10 candidate list for the *broader family/dad-van lifestyle niche* the CEO's 2026-07-17 standing order actually requested; that deliverable remains outstanding. Separately, the department flagged its own tooling as unreliable this cycle: Instagram/TikTok handle checks returned false "taken" results even against a nonsense test string, so no handle-availability finding from this report should be treated as verified. Etsy availability was inconclusive (rate-limited, HTTP 403 twice). Finally, ITU trademark filing mechanics are now quantified: $350/class base fee (same for ITU or use-based, post-2025 fee restructuring), $150/class Statement of Use, $125/class per six-month extension (up to 3 years) — a mechanical cost picture, not a strategic recommendation, which the report correctly routes to counsel rather than settling itself. The department is effectively asking: (1) should we pursue the .com or settle for a backup TLD, (2) should someone with live-platform access verify handles by hand, and (3) is the board ready to make the trademark-timing call now that costs are known — while flagging that the core deliverable (niche-wide candidate names) still isn't done.
 
 ### creative
 
@@ -36,30 +36,51 @@ Dormant — no agent active.
 
 ## Cross-Department Notes
 
-Market_intel is the only active department this cycle, so there is no live cross-department conflict to adjudicate; the one real cross-department dependency — market_intel's backup-handle list can't be finalized until creative (still dormant) sanity-checks it for brand voice — was already resolved by standing decision (2026-07-17) and simply remains in that held state, not a new issue.
+Only one active department (market_intel) filed this cycle, so there are no cross-department conflicts to surface. Worth flagging structurally, not as a conflict: the 2026-07-16 decision tasked creative with sanity-checking backup handle/domain variants before they're finalized, but creative remains dormant — that gate is still unmet regardless of how much diligence market_intel produces on its own.
 
 ## Proposed Decisions
 
-#### Decision: Engage outside counsel to decide trademark filing strategy (ITU vs. use-based) and timing
-- Recommendation: The diligence the CEO's 2026-07-16 deferral was waiting on is now in hand — ITU costs are quantified and the name-collision search remains clean. Recommend the CEO now engage outside counsel to make the wording/descriptiveness judgment call and decide between filing ITU now (~$350/class, reserving priority for up to ~3 years via extensions) versus continuing to wait for sales data, folding in ESC-002's generic-prior-use question and USPTO docket-status check.
+#### Decision: Secure minivandads.co and/or minivandads.shop as backup domains now
+- Recommendation: Both are confirmed available and cheap; given minivandads.com is held by an unidentified third party, locking in at least one working backup domain removes squatting risk while the .com and naming questions stay open. Low cost, but still a real purchase.
+- Checklist: money=yes, brand=no, legal=no, irreversible=no
+- Tag: [CEO REQUIRED]
+- Reason: No spend without CEO approval, per charter guardrail.
+
+#### Decision: Pursue acquisition of minivandads.com from its current registrant
+- Recommendation: Do not authorize outreach or negotiation yet — registrant identity and intent are unknown, and any approach (broker, direct offer) commits money and potentially a contract. Recommend holding until the naming question itself is resolved, so we don't spend effort or money acquiring a domain for a name that might change.
 - Checklist: money=yes, brand=no, legal=yes, irreversible=no
 - Tag: [CEO REQUIRED]
-- Reason: Spending money (filing/counsel fees) and legal commitment (trademark filing) guardrails.
+- Reason: Spend and potential legal commitment (negotiation/purchase agreement) require CEO approval.
 
-#### Decision: Direct live platform/domain verification before any handle is finalized
-- Recommendation: Tier 0 search-index tooling cannot confirm live availability of @minivandads and variants; recommend directing a person (or a future Tier 1 agent with tool access) to run direct platform username-checkers and a live WHOIS/registrar search before any handle or domain is claimed. This is a verification-process step, not a naming or spending decision.
+#### Decision: Direct a manual, human spot-check of Instagram/TikTok handle availability
+- Recommendation: This cycle's tooling gave a demonstrably false "taken" result against a nonsense test string, so no automated handle finding is trustworthy. A person should manually check @minivandads and the ranked backup handles before any handle-related decision is finalized. No cost, no commitment — just a verification step.
 - Checklist: money=no, brand=no, legal=no, irreversible=no
+- Tag: [BRAIN DECIDES]
+
+#### Decision: Hold trademark filing pending completion of the niche-wide candidate name list
+- Recommendation: ITU cost data is now in hand, but the CEO's 2026-07-17 standing order explicitly reopened the naming question and asked for 5–10 candidates across the broader niche — not yet delivered. Filing (ITU or otherwise) before that list exists risks locking in "Minivan Dads" prematurely. Continue holding.
+- Checklist: money=no, brand=no, legal=yes, irreversible=no
 - Tag: [CEO REQUIRED]
+- Reason: Trademark filing timing is a legal commitment decision reserved to the CEO.
+
+#### Decision: Direct market_intel to prioritize the outstanding niche-candidate-name deliverable next cycle
+- Recommendation: The standing order asked for 5–10 candidate names across the broader family/dad-van lifestyle niche, not just close variants of "Minivan Dads." This hasn't been delivered two cycles after being assigned. Direct it as the top priority for next week's report so the naming decision isn't stalled indefinitely by domain/handle diligence that, while useful, isn't the actual ask.
+- Checklist: money=no, brand=no, legal=no, irreversible=no
+- Tag: [BRAIN DECIDES]
+
 ## Escalation Triage
 
 ### Urgent
-None.
+None. No item this cycle meets the charter's bar for urgent (brand-identity threat, legal exposure requiring immediate action, or a time-sensitive competitor situation) — all open escalations are self-tagged "normal" by market_intel.
 
 ### This Meeting
-- **ESC-002**: Generic prior-use of "minivan dad"/"swagger wagon" phrasing and unverified USPTO docket status directly feed this meeting's filing-strategy decision above. Proposed ruling: fold into the counsel-engagement decision — counsel should be briefed on this finding as part of the registrability assessment.
-- **ESC-004**: Handle/domain verification gap is now concretely addressed by the proposed decision above. Proposed ruling: approve directing live platform/registrar checks; do not treat current findings as confirmed availability.
-- **ESC-005**: ITU costs are now fully quantified, so this escalation is ready to close into action. Proposed ruling: resolved by the counsel-engagement decision above — no separate ruling needed.
+- **ESC-002**: Diffuse prior marketplace use of "minivan dad"/"swagger wagon" phrasing needs to be checked against filing strategy, and USPTO docket status confirmed. Feeds directly into the trademark-hold decision above — propose: hold open, revisit with counsel once filing timing is decided.
+- **ESC-004**: Handle/domain verification can't be trusted at current Tier 0 tooling. Feeds the "manual spot-check" decision above — propose: accept the recommendation to get a human to verify before any handle claim.
+- **ESC-005**: ITU cost figures are now quantified and ready for a counsel conversation. Feeds the trademark-hold decision above — propose: keep open, task to counsel once naming is settled.
+- **ESC-006**: minivandads.com held by an unknown third party. Feeds both domain decisions above — propose: secure a backup TLD now, defer any .com pursuit until naming is resolved.
+- **ESC-007**: This cycle's IG/TikTok tool gave a false positive even on a nonsense string. Same disposition as ESC-004 — propose: treat as a live tooling defect, require manual verification, keep open until tooling is fixed or replaced.
 
 ### Defer
-None — all three open escalations are ripe for action this cycle; nothing is being pushed past this meeting.
-- Reason: [auto-upgraded: keyword match on category: spend, tier_change]
+None — every open escalation this cycle ties directly to a decision on this agenda; none are stale enough to push past this meeting.
+
+**Note on urgency mechanics:** nothing above is being surfaced as an active alert — Phase 1 has no push notifications. These items are simply sorted to the top of this agenda because the CEO is running this command now. If any of these genuinely can't wait a week, that needs to be said explicitly by the CEO, not assumed by the tagging above.
