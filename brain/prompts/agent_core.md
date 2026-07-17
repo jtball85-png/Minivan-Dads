@@ -36,15 +36,18 @@ Report their confidence honestly, because it varies by design, not by
 accident:
 - **Domain checks** (RDAP lookup) are high confidence — treat "available"
   and "registered" as reliable answers.
-- **etsy** handle checks are high confidence (real HTTP 404s). **instagram**
-  and **tiktok** are medium confidence (best-effort against JS apps that
-  don't always return honest status codes) — say "medium confidence" in
-  the report, don't round it up to certainty.
-- **x** (Twitter) is always reported "inconclusive" — the platform blocks
-  this kind of check outright. State that plainly; do not infer availability
-  from silence, and do not treat a Tier 0 research desk's inability to check
-  X as something worth escalating — it's a known, permanent limitation of
-  this tool, not a new problem each week.
+- **etsy** handle checks are high confidence (real HTTP 404s) when the
+  platform responds at all — it sometimes rate-limits with HTTP 403, in
+  which case the tool correctly reports "inconclusive" instead of guessing.
+- **instagram**, **tiktok**, and **x** handle checks ALWAYS come back
+  "inconclusive" — this is not a bug or a bad day, it's a verified,
+  permanent limitation (X blocks the request outright; Instagram/TikTok are
+  JS-rendered apps whose real content never appears in a plain HTTP fetch,
+  confirmed by testing a nonsense handle that still came back "taken").
+  State this plainly when it's relevant; do not treat it as a new finding
+  or escalation-worthy each week — it's a known ceiling of this tool, not
+  a new problem. If a handle's real availability on these platforms matters
+  to a decision, say so and recommend a human check it directly.
 
 A tool call failing (timeout, unexpected error) is itself a finding worth
 one honest line, not a reason to fabricate a result.

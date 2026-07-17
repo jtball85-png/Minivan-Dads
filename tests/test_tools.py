@@ -77,23 +77,25 @@ class TestCheckHandle:
         assert result["status"] == "taken_or_exists"
         assert result["confidence"] == "high"
 
-    def test_instagram_not_found_marker_detected(self, monkeypatch):
-        monkeypatch.setattr(
-            "urllib.request.urlopen",
-            lambda *a, **k: FakeResponse(200, b"Sorry, this page isn't available."),
-        )
-        result = check_handle("instagram", "minivandads")
-        assert result["status"] == "available"
-        assert result["confidence"] == "medium"
+    def test_instagram_never_hits_network_and_is_always_inconclusive(self, monkeypatch):
+        # Regression: a nonsense handle that cannot possibly exist still
+        # came back "taken_or_exists" via the old marker heuristic, live —
+        # proof the signal is worthless. Instagram now never even attempts
+        # the network call; it's unverifiable by design, not by guesswork.
+        def fail_if_called(*a, **k):
+            raise AssertionError("Instagram checks must never hit the network")
+        monkeypatch.setattr("urllib.request.urlopen", fail_if_called)
+        result = check_handle("instagram", "zzqxnonexistenthandle999xyz")
+        assert result["status"] == "inconclusive"
+        assert result["confidence"] == "unverifiable"
 
-    def test_instagram_taken_when_no_marker(self, monkeypatch):
-        monkeypatch.setattr(
-            "urllib.request.urlopen",
-            lambda *a, **k: FakeResponse(200, b"<html>real profile content</html>"),
-        )
-        result = check_handle("instagram", "minivandads")
-        assert result["status"] == "taken_or_exists"
-        assert result["confidence"] == "medium"
+    def test_tiktok_never_hits_network_and_is_always_inconclusive(self, monkeypatch):
+        def fail_if_called(*a, **k):
+            raise AssertionError("TikTok checks must never hit the network")
+        monkeypatch.setattr("urllib.request.urlopen", fail_if_called)
+        result = check_handle("tiktok", "anyhandle")
+        assert result["status"] == "inconclusive"
+        assert result["confidence"] == "unverifiable"
 
     def test_x_is_always_inconclusive_blocked(self, monkeypatch):
         # No network call should even happen for X.
@@ -102,17 +104,11 @@ class TestCheckHandle:
         monkeypatch.setattr("urllib.request.urlopen", fail_if_called)
         result = check_handle("x", "minivandads")
         assert result["status"] == "inconclusive"
-        assert result["confidence"] == "blocked"
+        assert result["confidence"] == "unverifiable"
 
     def test_unsupported_platform(self):
         result = check_handle("myspace", "minivandads")
         assert result["status"] == "unsupported_platform"
-
-    def test_rate_limit_response_is_inconclusive_not_available(self, monkeypatch):
-        monkeypatch.setattr("urllib.request.urlopen", raise_http_error(429))
-        result = check_handle("instagram", "minivandads")
-        assert result["status"] == "inconclusive"
-        assert result["confidence"] == "low"
 
     def test_bot_blocked_response_is_inconclusive_not_available(self, monkeypatch):
         # Observed live: Etsy returns 403 to this tool's requests. Declared
@@ -132,7 +128,7 @@ class TestExecuteTool:
 
     def test_dispatches_handle(self, monkeypatch):
         result = execute_tool("check_handle_availability", {"platform": "x", "handle": "mvd"})
-        assert result["confidence"] == "blocked"
+        assert result["confidence"] == "unverifiable"
 
     def test_unknown_tool(self):
         assert "error" in execute_tool("nonsense_tool", {})

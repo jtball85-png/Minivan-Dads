@@ -21,30 +21,45 @@ USER_AGENT = "Mozilla/5.0 (compatible; MinivanDadsResearch/1.0; +read-only avail
 COMMON_HEADERS = {"User-Agent": USER_AGENT, "Accept": "text/html,application/json",
                   "Accept-Language": "en-US,en;q=0.9"}
 
-# Per-platform behavior. "confidence" describes how much a clean result can
-# be trusted; not_found_markers are text fragments that show up on that
-# platform's own "doesn't exist" page even when it returns HTTP 200 (most
-# social platforms are single-page apps that don't use real 404s).
+# Per-platform behavior. mode="live_check" does a real HTTP fetch and trusts
+# the not_found_markers text; mode="unverifiable" skips the network call
+# entirely and always reports inconclusive, because we have EVIDENCE (not
+# just suspicion) that no reliable signal exists for that platform:
+#
+# - x: the platform actively blocks unauthenticated checks (HTTP-level).
+# - instagram / tiktok: proven unreliable by direct test — a nonsense
+#   handle that cannot possibly be registered (e.g.
+#   "zzqxnonexistenthandle999xyz") still returned "taken_or_exists",
+#   because both are JS-rendered single-page apps whose "this page isn't
+#   available" message is injected client-side and never appears in the
+#   raw server HTML this tool fetches. A marker that never fires isn't
+#   medium confidence, it's ALWAYS "taken" regardless of truth — worse
+#   than no answer, so this returns "we don't know" instead of guessing.
 PLATFORM_CONFIG = {
     "instagram": {
         "url": "https://www.instagram.com/{handle}/",
-        "confidence": "medium",
-        "not_found_markers": ["Sorry, this page"],
+        "mode": "unverifiable",
+        "note": "Instagram is a JS-rendered app — its 'page not found' message "
+                "never appears in the raw HTML this tool fetches, so a 'taken' "
+                "result would be indistinguishable from an available one "
+                "(verified with a nonsense-handle test). Cannot verify.",
     },
     "tiktok": {
         "url": "https://www.tiktok.com/@{handle}",
-        "confidence": "medium",
-        "not_found_markers": ["Couldn't find this account", "user-post"],
+        "mode": "unverifiable",
+        "note": "TikTok is a JS-rendered app with the same limitation as "
+                "Instagram — verified with a nonsense-handle test. Cannot verify.",
     },
     "etsy": {
         "url": "https://www.etsy.com/shop/{handle}",
+        "mode": "live_check",
         "confidence": "high",  # Etsy returns a real HTTP 404 for missing shops
         "not_found_markers": [],
     },
     "x": {
         "url": "https://x.com/{handle}",
-        "confidence": "blocked",  # X blocks unauthenticated checks outright
-        "not_found_markers": [],
+        "mode": "unverifiable",
+        "note": "X blocks unauthenticated availability checks outright.",
     },
 }
 
@@ -85,12 +100,10 @@ def check_handle(platform: str, handle: str) -> dict:
             "confidence": "n/a",
             "note": f"supported platforms: {', '.join(PLATFORM_CONFIG)}",
         }
-    if cfg["confidence"] == "blocked":
+    if cfg["mode"] == "unverifiable":
         return {
             "platform": platform, "handle": handle, "status": "inconclusive",
-            "confidence": "blocked",
-            "note": "X blocks unauthenticated availability checks — this tool "
-                    "cannot verify X handles. Report this limitation, don't guess.",
+            "confidence": "unverifiable", "note": cfg["note"],
         }
 
     url = cfg["url"].format(handle=handle)
@@ -135,8 +148,9 @@ TOOL_SCHEMAS = [
         "description": (
             "Check whether a username/handle is taken on a specific platform, "
             "via a live request to that platform (not a search-index guess). "
-            "Confidence varies by platform: etsy=high, instagram/tiktok=medium "
-            "(JS apps, best-effort), x=always inconclusive (platform blocks this)."
+            "Only etsy gives a real answer (high confidence, real HTTP 404s); "
+            "instagram, tiktok, and x always return 'inconclusive' — verified "
+            "unreliable/blocked, not a guess dressed up as medium confidence."
         ),
         "input_schema": {
             "type": "object",
