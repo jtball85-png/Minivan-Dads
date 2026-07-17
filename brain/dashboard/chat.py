@@ -26,6 +26,20 @@ def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload)}\n\n"
 
 
+def _guard(gen):
+    """Wrap an SSE generator so an exception mid-stream (an API blip, a
+    parsing surprise) reaches the CEO as a visible error event instead of a
+    silently dead stream."""
+    try:
+        yield from gen
+    except Exception as e:  # noqa: BLE001 — anything must surface
+        yield _sse({"error": f"{type(e).__name__}: {e}", "done": True})
+
+
+def _stream(gen) -> StreamingResponse:
+    return StreamingResponse(_guard(gen), media_type="text/event-stream")
+
+
 class AskRequest(BaseModel):
     question: str
 
@@ -155,7 +169,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
                 }
             yield _sse({"done": True, "decision_record": record})
 
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
+        return _stream(event_stream())
 
     @app.post("/api/ask/log-decision")
     def log_decision(body: LogDecisionRequest):
@@ -232,7 +246,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
 
             yield _sse({"done": True, "floor_open": True})
 
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
+        return _stream(event_stream())
 
     @app.post("/api/boardroom/floor")
     def boardroom_floor(body: FloorRequest):
@@ -246,7 +260,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
                 yield _sse({"round": entry.round, "speaker": entry.speaker, "text": entry.text})
             yield _sse({"done": True})
 
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
+        return _stream(event_stream())
 
     @app.post("/api/boardroom/synthesize")
     def boardroom_synthesize():
@@ -257,7 +271,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
                 yield _sse({"delta": delta})
             yield _sse({"done": True})
 
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
+        return _stream(event_stream())
 
     @app.post("/api/boardroom/rule")
     def boardroom_rule(body: RuleRequest):
@@ -325,7 +339,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
                 "agenda": agenda_text,
             })
 
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
+        return _stream(event_stream())
 
     @app.post("/api/command/agent")
     def command_agent(body: AgentRequest):
@@ -342,7 +356,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
                 yield _sse({"line": line})
             yield _sse({"done": True, "exit_code": code})
 
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
+        return _stream(event_stream())
 
     @app.post("/api/consult")
     def consult(body: ConsultRequest):
@@ -366,7 +380,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
                 yield _sse({"delta": delta})
             yield _sse({"done": True, "advisory": advisory})
 
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
+        return _stream(event_stream())
 
     # -- meeting flow (one at a time, like the boardroom) ----------------
 
@@ -420,7 +434,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
             reply = session.discuss(body.item_id, body.text)
             yield _sse({"reply": reply, "done": True})
 
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
+        return _stream(event_stream())
 
     @app.post("/api/meeting/ruling")
     def meeting_ruling(body: MeetingRulingRequest):

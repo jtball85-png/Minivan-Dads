@@ -244,6 +244,28 @@ class TestAgentCommand:
         assert events[-1]["exit_code"] == 0
 
 
+class TestStreamErrorGuard:
+    def test_api_failure_mid_stream_surfaces_as_error_event(self, env):
+        """An Anthropic 500 (or any exception) inside an SSE generator must
+        reach the browser as an {error} event — never a silently dead
+        stream. Regression for the invisible ingest failure."""
+        class ExplodingLLM(DashFakeLLM):
+            def call(self, *a, **k):
+                raise RuntimeError("Internal server error (simulated API 500)")
+
+        config, hq = env
+        llm = ExplodingLLM()
+        app = create_app(config, hq)
+        register_chat_routes(app, config, hq, make_llm=lambda: llm)
+        client = TestClient(app)
+
+        response = client.post("/api/command/ingest")
+        assert response.status_code == 200  # stream opened, then failed
+        events = parse_sse(response.text)
+        assert any("Internal server error" in e.get("error", "") for e in events)
+        assert events[-1]["done"] is True
+
+
 class TestHelp:
     def test_lists_every_bar_command(self, env):
         client, _ = make_client(env, [])

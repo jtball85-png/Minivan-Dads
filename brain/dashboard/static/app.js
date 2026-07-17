@@ -203,10 +203,13 @@ $("askForm").onsubmit = async (ev) => {
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     let record = null;
+    let streamError = null;
     await readSSE(response, (e) => {
+      if (e.error) { streamError = e.error; return; }
       if (e.delta) tx.textContent += e.delta;
       if (e.done) record = e.decision_record;
     });
+    if (streamError) throw new Error(streamError + " — usually a momentary API failure; try again.");
     if (record) offerDecisionLog(record);
   } catch (err) {
     tx.textContent += err.message.includes("404")
@@ -524,7 +527,14 @@ async function postSSE(url, body, onEvent) {
     try { detail = (await response.json()).detail || detail; } catch {}
     throw new Error(detail);
   }
-  await readSSE(response, onEvent);
+  // A server-side failure mid-stream arrives as an {error} event — surface
+  // it as a thrown error so every caller's catch shows it to the CEO.
+  let streamError = null;
+  await readSSE(response, (e) => {
+    if (e.error) { streamError = e.error; return; }
+    onEvent(e);
+  });
+  if (streamError) throw new Error(streamError + " — usually a momentary API failure; try the same action again.");
 }
 
 /* ---------- command implementations ---------- */
