@@ -46,7 +46,7 @@ The CEO (human) runs CLI commands against HQ:
 Phase 1 complete and acceptance-tested: HQ + all five brain commands, plus the §7 additions from the 7/16 specs — free-text-everywhere CLI with `brain` console script, executor framework (registry/limits/capability ladder/rollback, fake connectors only), boardroom protocol (CLI + dashboard, honesty norm enforced structurally), and the CEO dashboard (four tabs, streaming ask chat, live boardroom). Phase 2 is live: market_intel is active at Tier 0 with a real directive, running Thursday nights via GitHub Actions (secret set, workflow active); its first live report and escalation are in HQ. Phase 3 (Creative + Content) is gated on the Phase 2 exit criteria — a directive change visibly changing the next report, plus a hard shop-open date — which need real calendar weeks and CEO work, not more code. Handoff docs live under `docs/specs/`; roadmap also at `hq/charter/roadmap.md`. 174 tests passing.
 
 ## Where we left off
-Last commit: 0e75977 — End of day 2026-07-17 — context and memory updated
+Last commit: 8c58d70 — Board record: W29 agenda refreshed to cover ESC-004/005
 In progress: none
 Branch: main
 
