@@ -68,3 +68,28 @@ Format per entry:
 - Rationale: To inform the filing-timing decision without spending money, the CEO approved a narrow, fast-turnaround task: check @minivandads and close variants across relevant platforms plus .com/.co/.shop, distinguish squatted-dead from active-and-relevant conflicts, produce a ranked list of on-voice backup variants (explicitly rejecting generic "official/hq/numbers" filler), and sharpen the registrability-posture note for counsel ahead of any future filing. Creative is looped in briefly to sanity-check that variants still sound like something a minivan dad would wear. Dissents: none
 - Decided by: CEO
 - Affected departments: market_intel, creative
+
+## 2026-07-17 — Defer backup-handle finalization until creative is activated
+- Rationale: The standing order requires a creative sanity-check before a ranked backup-handle list can be reported as finished, and creative remains dormant. Holding the draft candidates as unvetted avoids locking in names that haven't been checked against brand voice, at no cost or urgency tradeoff.
+- Decided by: brain (ratified at board meeting)
+- Affected departments: market_intel, creative
+
+## 2026-07-17 — No Tier promotion for market_intel this cycle
+- Rationale: A single standing report, even one surfacing a real capability gap, does not constitute the track record of consistent good judgment the tier system requires before a promotion is even proposed. Market_intel holds at Tier 0; revisit if the tooling gap recurs or blocks a live decision.
+- Decided by: CEO
+- Affected departments: market_intel
+
+## 2026-07-17 — Brand-name research reopened — "Minivan Dads" not yet accepted as final
+- Rationale: The CEO rejected the board's converging view that the brand-name research was closed. The single unresolved gap — no live handle/username/domain verification — is enough to keep the naming question open rather than risk building further brand equity around a name that might need to change later. The CEO will address the tooling gap directly with IT; until verification is possible, "Minivan Dads" remains a candidate, not a locked decision.
+- Decided by: CEO
+- Affected departments: market_intel, creative, product, finance
+
+## 2026-07-17 — New standing task: thorough brand-name search for the family/dad-van lifestyle niche
+- Rationale: The CEO wants a real, marketing-research-backed set of alternatives on the table — not just clearance-searches on "Minivan Dads" — so the company isn't boxed into one name by default. Market_intel is directed to produce a solid list of 5–10 candidate brand names for the niche before any trademark spend decision is revisited.
+- Decided by: CEO
+- Affected departments: market_intel
+
+## 2026-07-17 — Trademark filing decision remains parked pending the above
+- Rationale: The board reached rapid, near-unanimous convergence on filing the ITU trademark now, but the CEO explicitly kept this off the table this cycle. Filing timing is a CEO-only spend/legal call, and it stays deferred until the reopened naming research (including alternatives and live verification) is complete — filing before that risks locking in a name the CEO isn't yet committed to.
+- Decided by: CEO
+- Affected departments: market_intel, creative, product, finance

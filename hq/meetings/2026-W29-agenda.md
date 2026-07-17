@@ -4,7 +4,7 @@
 
 ### market_intel
 
-A hand-filed report (marked as CEO test input, not from an active agent) surfaces four things: a competitor ("Dad Gang") launching a badge-free "Van Life Dad" hat in adjacent territory; three new Etsy sellers using the exact phrase "Swagger Wagon" — language central to our brand voice — with no trademark filed by anyone yet; the approaching back-to-school season (6 weeks out) as the year's biggest minivan-visibility window; and a self-observation that the watch list is going stale and should add Amazon Merch and TikTok Shop. The department is effectively asking for two things: faster movement on trademark protection, and an expanded monitoring scope.
+Market Intel filed a substantial report this cycle covering all standing-order items. Key points: (1) the name-collision search remains clean — only descriptive marketplace noise found, reinforcing the already-closed name question, but the "descriptive phrase is common" texture is exactly what counsel will need for registrability assessment; (2) a hard tooling gap is confirmed — Tier 0 search access cannot perform live handle/domain availability checks on Instagram, TikTok, X, Etsy, or registrars, so "no adverse hits found" is absence-of-evidence, not confirmed availability (this is the subject of open ESC-004); (3) ITU trademark filing mechanics are now quantified in concrete detail — $350/class base fee, $150/class Statement of Use, $125/class per six-month extension (renewable up to ~3 years), versus a $200/class penalty for free-text filing errors that are non-refundable if rejected — directly unblocking the deferred filing-timing decision, though the department is explicit that wording/descriptiveness judgment calls belong to outside counsel, not this desk; (4) a ranked backup handle/domain shortlist was produced (minivandadsclub, swaggerwagondads, minivandadco, minivandads.shop) but is explicitly flagged as unvetted pending creative's sanity-check, consistent with the standing order and the prior decision to hold that check until creative is activated. No escalations raised this cycle beyond the three already open.
 
 ### creative
 
@@ -36,33 +36,30 @@ Dormant — no agent active.
 
 ## Cross-Department Notes
 
-Only one department is active this cycle (market_intel); with every other department dormant there's nothing to cross-reference yet. Worth flagging for the CEO directly: the market_intel finding about the back-to-school window has natural downstream implications for creative/content/paid_ads once those departments exist, but there's no agent yet to act on it — noting it now so it isn't lost by the time those tiers activate.
+Market_intel is the only active department this cycle, so there is no live cross-department conflict to adjudicate; the one real cross-department dependency — market_intel's backup-handle list can't be finalized until creative (still dormant) sanity-checks it for brand voice — was already resolved by standing decision (2026-07-17) and simply remains in that held state, not a new issue.
 
 ## Proposed Decisions
 
-#### Decision: Expedite Class 25 trademark filing given "Swagger Wagon" exposure
-- Recommendation: Given three Etsy sellers now using "Swagger Wagon" — language drawn directly from our brand voice — with no trademark on file from anyone, I recommend treating the standing trademark priority as time-sensitive and moving to file (or confirm filing status) as soon as possible rather than at normal cadence.
-- Checklist: money=yes, brand=yes, legal=yes, irreversible=no
+#### Decision: Engage outside counsel to decide trademark filing strategy (ITU vs. use-based) and timing
+- Recommendation: The diligence the CEO's 2026-07-16 deferral was waiting on is now in hand — ITU costs are quantified and the name-collision search remains clean. Recommend the CEO now engage outside counsel to make the wording/descriptiveness judgment call and decide between filing ITU now (~$350/class, reserving priority for up to ~3 years via extensions) versus continuing to wait for sales data, folding in ESC-002's generic-prior-use question and USPTO docket-status check.
+- Checklist: money=yes, brand=no, legal=yes, irreversible=no
 - Tag: [CEO REQUIRED]
-- Reason: Trademark filing is an explicit standing legal-commitment priority in the charter, and any filing action involves spend and directly touches brand-identity protection — both CEO-only regardless of confidence.
+- Reason: Spending money (filing/counsel fees) and legal commitment (trademark filing) guardrails.
 
-#### Decision: Expand market_intel standing watch list to include Amazon Merch and TikTok Shop
-- Recommendation: Approve updating the market_intel directive's standing orders to add these two channels, per the department's own observation that its current sources are producing repetitive, staling data.
+#### Decision: Direct live platform/domain verification before any handle is finalized
+- Recommendation: Tier 0 search-index tooling cannot confirm live availability of @minivandads and variants; recommend directing a person (or a future Tier 1 agent with tool access) to run direct platform username-checkers and a live WHOIS/registrar search before any handle or domain is claimed. This is a verification-process step, not a naming or spending decision.
 - Checklist: money=no, brand=no, legal=no, irreversible=no
-- Tag: [BRAIN DECIDES]
-
-#### Decision: Flag back-to-school window (≈6 weeks out) for planning purposes
-- Recommendation: Log the seasonal window as a planning input for when creative/content/paid_ads are activated; no action is taken now since those departments are dormant, this simply prevents the insight from being lost before it's actionable.
-- Checklist: money=no, brand=no, legal=no, irreversible=no
-- Tag: [BRAIN DECIDES]
-
+- Tag: [CEO REQUIRED]
 ## Escalation Triage
 
 ### Urgent
-- **ESC-001** — Etsy sellers using "Swagger Wagon" with no trademark filed; direct exposure to our Class 25 filing and core brand voice language. Proposed ruling: escalate to CEO now as [CEO REQUIRED] — recommend expediting the trademark filing (see decision above). Note: this is only being surfaced now, at this meeting/command run — Phase 1 has no active alerting, so if this genuinely can't wait, it needs the CEO's attention today rather than assuming it was already seen.
+None.
 
 ### This Meeting
-- None.
+- **ESC-002**: Generic prior-use of "minivan dad"/"swagger wagon" phrasing and unverified USPTO docket status directly feed this meeting's filing-strategy decision above. Proposed ruling: fold into the counsel-engagement decision — counsel should be briefed on this finding as part of the registrability assessment.
+- **ESC-004**: Handle/domain verification gap is now concretely addressed by the proposed decision above. Proposed ruling: approve directing live platform/registrar checks; do not treat current findings as confirmed availability.
+- **ESC-005**: ITU costs are now fully quantified, so this escalation is ready to close into action. Proposed ruling: resolved by the counsel-engagement decision above — no separate ruling needed.
 
 ### Defer
-- None.
+None — all three open escalations are ripe for action this cycle; nothing is being pushed past this meeting.
+- Reason: [auto-upgraded: keyword match on category: spend, tier_change]
