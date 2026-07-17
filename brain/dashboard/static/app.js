@@ -20,7 +20,7 @@ document.querySelectorAll("nav button").forEach((b) => {
 const QUICK_CHIPS = {
   home:  [{ t: "#ingest" }, { t: "#meeting" }, { t: "#status" }],
   depts: [{ t: "@market_intel ", focus: true }, { t: "#agent market_intel" },
-          { t: "#discuss market_intel" }],
+          { t: "#discuss market_intel" }, { t: "#collab market_intel, creative: ", focus: true }],
   board: [{ t: "#discuss market_intel" }, { t: "#ingest" }, { t: "#meeting" }],
   cmds:  [{ t: "#help" }],
 };
@@ -623,6 +623,25 @@ async function cmdAgent(dept) {
   });
 }
 
+async function cmdCollab(deptsRaw, task) {
+  const departments = deptsRaw.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
+  workMsg("CEO", `#collab ${departments.join(", ")} — ${task}`);
+  workSys("convening the departments on a joint deliverable…");
+  let synthTx = null;
+  await postSSE("/api/collaborate", { departments, task }, (e) => {
+    if (e.line) workSys(e.line);
+    if (e.department) workMsg(e.department, e.text);
+    if (e.delta) {
+      if (!synthTx) synthTx = workMsg("brain", "");
+      synthTx.textContent += e.delta;
+    }
+    if (e.done) {
+      workOk(`✓ joint deliverable saved to HQ: ${e.path}`);
+      loadDepartments();
+    }
+  });
+}
+
 async function cmdConsult(dept, message) {
   workMsg("CEO", `@${dept} ${message}`);
   const tx = workMsg(dept, "");
@@ -849,6 +868,14 @@ $("cmdBar").onsubmit = async (ev) => {
         `Open discussion of ${dept}'s latest report: what should we do with these findings, and what are the next steps?`;
       document.querySelector('nav button[data-v="board"]').click();
       await brOpen(topic, dept);
+    }
+    else if (headLower === "#collab") {
+      const colon = rest.indexOf(":");
+      if (colon === -1) { workSys("usage: #collab market_intel, creative: <the joint task>"); return; }
+      const deptsRaw = rest.slice(0, colon);
+      const task = rest.slice(colon + 1).trim();
+      if (!deptsRaw.trim() || !task) { workSys("usage: #collab market_intel, creative: <the joint task>"); return; }
+      await cmdCollab(deptsRaw, task);
     }
     else if (headLower === "#directive") {
       const [dept, ...changes] = rest.split(/\s+/);

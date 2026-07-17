@@ -81,6 +81,11 @@ class ConsultRequest(BaseModel):
     message: str
 
 
+class CollaborateRequest(BaseModel):
+    departments: list[str]
+    task: str
+
+
 class MeetingDiscussRequest(BaseModel):
     item_id: int
     text: str
@@ -120,6 +125,8 @@ COMMAND_HELP = [
      "help": "Run a department agent's research loop now instead of waiting for Thursday."},
     {"command": "#discuss", "syntax": "#discuss <department> [topic]",
      "help": "Share that department's latest report with the whole board and open a debate on it."},
+    {"command": "#collab", "syntax": "#collab dept1, dept2: <task>",
+     "help": "Two or more departments produce a joint deliverable together (cooperative, not a debate)."},
     {"command": "#directive", "syntax": "#directive <department> <changes in plain English>",
      "help": "Revise a department's standing orders; you confirm before it's written."},
     {"command": "#abandon", "syntax": "#abandon",
@@ -377,6 +384,35 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
             for line in lines:
                 yield _sse({"line": line})
             yield _sse({"done": True, "exit_code": code})
+
+        return _stream(event_stream())
+
+    @app.post("/api/collaborate")
+    def collaborate(body: CollaborateRequest):
+        from brain.collaborate import CollaborationSession
+
+        depts = [d for d in body.departments if d in config.departments]
+        unknown = [d for d in body.departments if d not in config.departments]
+        if len(depts) < 2:
+            detail = "Name at least two known departments to collaborate."
+            if unknown:
+                detail += f" Unknown: {', '.join(unknown)}."
+            raise HTTPException(status_code=422, detail=detail)
+        task = body.task.strip()
+        if not task:
+            raise HTTPException(status_code=422, detail="Describe the joint task.")
+
+        session = CollaborationSession(make_llm(), config, hq, task, depts)
+
+        def event_stream():
+            yield _sse({"line": f"Convening {', '.join(depts)} on a joint deliverable…"})
+            for c in session.contribute_stream():
+                yield _sse({"department": c.department, "text": c.text})
+            yield _sse({"line": "brain is merging the contributions…"})
+            for delta in session.synthesize_stream():
+                yield _sse({"delta": delta})
+            path = session.save()
+            yield _sse({"done": True, "path": str(path), "departments": depts})
 
         return _stream(event_stream())
 

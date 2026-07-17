@@ -390,6 +390,20 @@ class HQ:
         path.write_text(content, encoding="utf-8")
         return path
 
+    def write_collaboration(self, week_key: str, slug: str, content: str) -> Path:
+        """hq/collaborations/{week}-{slug}.md — a joint department work-product.
+        Collision-suffixed like transcripts so a repeat never overwrites."""
+        collab_dir = self.root / "collaborations"
+        collab_dir.mkdir(parents=True, exist_ok=True)
+        base = f"{week_key}-{slug}"
+        path = collab_dir / f"{base}.md"
+        n = 2
+        while path.exists():
+            path = collab_dir / f"{base}-{n}.md"
+            n += 1
+        path.write_text(content, encoding="utf-8")
+        return path
+
     def write_monthly_review(self, year_month: str, content: str) -> Path:
         path = self._meetings_dir() / "monthly" / f"{year_month}-review.md"
         path.parent.mkdir(parents=True, exist_ok=True)
