@@ -40,3 +40,15 @@ position in this file):
 - Raised by: market_intel
 - Urgency: normal
 - Summary: ITU trademark filing costs are now quantified ($350/class to file, plus $150/class Statement of Use and $125/class per six-month extension, up to 3 years) — CEO should decide with outside counsel whether ITU or use-based filing better fits our actual commercial-use status before the trademark-filing-timing decision is finalized at the next board meeting.
+
+## ESC-006
+- Raised: 2026-07-17
+- Raised by: market_intel
+- Urgency: normal
+- Summary: minivandads.com is registered to an unidentified third party with no visible live content or competing brand use found — CEO should decide whether to pursue backup domains (.co/.shop, both confirmed available) now, or have counsel/a registrar check pursue the .com directly, before the trademark-timing decision is finalized.
+
+## ESC-007
+- Raised: 2026-07-17
+- Raised by: market_intel
+- Urgency: normal
+- Summary: This week's Instagram/TikTok availability-check tool gave a false "taken" result even on a nonsense test string — don't treat any Instagram/TikTok "taken" finding from this cycle's report as verified; a manual human check is needed before locking in a handle decision.
