@@ -142,3 +142,37 @@ class TestRunAgent:
         llm = ResearchFakeLLM(responses=[REPORT_PLAIN])
         run_agent("market_intel", config, hq, llm, print_fn=lambda s: None)
         assert "first report" in llm.calls[0].system_blocks[1]["text"].lower()
+
+    def test_trigger_message_explicitly_reminds_about_live_check_tools(self, agent_env):
+        """Regression: passive tool-availability guidance in the system
+        prompt alone was not enough — live-verified the model silently
+        defaults to web_search and reports 'no live-check capability' even
+        with the tools present, UNLESS reminded in the trigger itself."""
+        config, hq = agent_env
+        llm = ResearchFakeLLM(responses=[REPORT_PLAIN])
+        run_agent("market_intel", config, hq, llm, print_fn=lambda s: None)
+        trigger = llm.calls[0].user_message
+        assert "check_domain_availability" in trigger
+        assert "check_handle_availability" in trigger
+        assert "MUST call the tool" in trigger
+
+    def test_extra_tools_and_executor_passed_through(self, agent_env):
+        """The fake ignores extra_tools/tool_executor by default; a fake
+        that captures them proves run_agent actually supplies both rather
+        than silently calling the plain (toolless) code path."""
+        config, hq = agent_env
+
+        captured = {}
+
+        class CapturingFakeLLM(ResearchFakeLLM):
+            def call_with_web_search(self, system_blocks, user_message,
+                                     max_tokens=8192, max_searches=8,
+                                     extra_tools=None, tool_executor=None):
+                captured["extra_tools"] = extra_tools
+                captured["tool_executor"] = tool_executor
+                return self.call(system_blocks, user_message, max_tokens)
+
+        llm = CapturingFakeLLM(responses=[REPORT_PLAIN])
+        run_agent("market_intel", config, hq, llm, print_fn=lambda s: None)
+        assert captured["extra_tools"] is not None
+        assert captured["tool_executor"] is not None

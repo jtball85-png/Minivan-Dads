@@ -69,10 +69,23 @@ def run_agent(dept: str, config: BrainConfig, hq: HQ, llm: LLM,
     ]
 
     print_fn(f"[{dept}] researching (week {week})...")
+    trigger = (
+        f"Today is {date.today().isoformat()}, week {week}. Research per your "
+        f"standing directive and produce this week's report.\n\n"
+        # Passive "you have these tools" guidance in the (large, cached)
+        # system prompt was not enough — the model reliably defaulted to
+        # web_search alone and reported the old "no live-check capability"
+        # limitation even with the tools available. An explicit reminder in
+        # the live request itself is what actually gets them used —
+        # confirmed by direct comparison, not a guess.
+        f"REMINDER: you have check_domain_availability and check_handle_availability "
+        f"tools. Any time your directive asks you to check whether a domain or handle "
+        f"is taken, you MUST call the tool — do not rely on web search for that "
+        f"question, and do not report that you lack live-check capability; you have it."
+    )
     report = llm.call_with_web_search(
         system_blocks,
-        f"Today is {date.today().isoformat()}, week {week}. Research per your "
-        f"standing directive and produce this week's report.",
+        trigger,
         max_tokens=config.max_tokens["agent"],
         max_searches=config.agent_max_searches,
         # Read-only live-check tools (domain/handle availability) — no
