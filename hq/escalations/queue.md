@@ -28,3 +28,15 @@ position in this file):
 - Raised by: brain (on CEO instruction)
 - Urgency: normal
 - Summary: Verify the first scheduled market_intel run fired Thursday night: check the GitHub Actions tab (market-intel-agent workflow) Friday morning and confirm a fresh weekly report was committed to hq/reports/market_intel/ before running brain ingest. Resolve this once confirmed.
+
+## ESC-004
+- Raised: 2026-07-17
+- Raised by: market_intel
+- Urgency: normal
+- Summary: The handle/domain availability check for @minivandads and variants cannot be verified to a reliable standard with current Tier 0 tooling (search-index only, no live platform lookups) — CEO should decide whether to accept "no adverse hits found" as sufficient signal, or direct a Tier 1 agent / a person to do direct platform checks before any handle claiming or backup-name decision is finalized.
+
+## ESC-005
+- Raised: 2026-07-17
+- Raised by: market_intel
+- Urgency: normal
+- Summary: ITU trademark filing costs are now quantified ($350/class to file, plus $150/class Statement of Use and $125/class per six-month extension, up to 3 years) — CEO should decide with outside counsel whether ITU or use-based filing better fits our actual commercial-use status before the trademark-filing-timing decision is finalized at the next board meeting.
