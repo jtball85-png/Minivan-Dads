@@ -364,8 +364,15 @@ class HQ:
         return path
 
     def write_minutes(self, week_key: str, content: str) -> Path:
-        path = self._meetings_dir() / f"{week_key}-minutes.md"
-        path.parent.mkdir(parents=True, exist_ok=True)
+        """Second meeting in the same week gets -2, -3... — minutes are a
+        record; records don't get overwritten."""
+        meetings_dir = self._meetings_dir()
+        meetings_dir.mkdir(parents=True, exist_ok=True)
+        path = meetings_dir / f"{week_key}-minutes.md"
+        n = 2
+        while path.exists():
+            path = meetings_dir / f"{week_key}-minutes-{n}.md"
+            n += 1
         path.write_text(content, encoding="utf-8")
         return path
 

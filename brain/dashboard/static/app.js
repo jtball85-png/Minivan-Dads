@@ -12,8 +12,32 @@ document.querySelectorAll("nav button").forEach((b) => {
     document.querySelectorAll(".view").forEach((x) => x.classList.remove("on"));
     b.classList.add("on");
     $(b.dataset.v).classList.add("on");
+    renderQuickChips(b.dataset.v);
   };
 });
+
+/* ---------- per-tab quick commands (chips fill the command bar) ---------- */
+const QUICK_CHIPS = {
+  home:  [{ t: "#ingest" }, { t: "#meeting" }, { t: "#status" }],
+  depts: [{ t: "@market_intel ", focus: true }, { t: "#agent market_intel" },
+          { t: "#discuss market_intel" }],
+  board: [{ t: "#discuss market_intel" }, { t: "#ingest" }, { t: "#meeting" }],
+  cmds:  [{ t: "#help" }],
+};
+function renderQuickChips(tab) {
+  const box = $("quickChips");
+  box.innerHTML = "";
+  (QUICK_CHIPS[tab] || []).forEach((c) => {
+    const b = document.createElement("button");
+    b.textContent = c.t.trim();
+    b.onclick = () => {
+      $("cmdInput").value = c.t;
+      if (c.focus) $("cmdInput").focus();
+      else $("cmdBar").requestSubmit();
+    };
+    box.appendChild(b);
+  });
+}
 
 /* ---------- dashboard ---------- */
 async function loadOverview() {
@@ -265,15 +289,17 @@ $("brForm").onsubmit = async (ev) => {
   }
 };
 
-async function brOpen(topic) {
+async function brOpen(topic, exhibitDept) {
   $("brLog").innerHTML = "";
   $("brChips").innerHTML = "";
   brDeptColors = {};
-  brSys(`brain boardroom "${topic}" — convening…`);
+  brSys(`brain boardroom "${topic}"` +
+        (exhibitDept ? ` — sharing ${exhibitDept}'s latest report with the board` : "") +
+        " — convening…");
   const response = await fetch("/api/boardroom/open", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ topic }),
+    body: JSON.stringify({ topic, exhibit_department: exhibitDept || null }),
   });
   if (!response.ok) throw new Error((await response.json()).detail || `HTTP ${response.status}`);
   brPhase = "debating";
@@ -750,6 +776,14 @@ $("cmdBar").onsubmit = async (ev) => {
       if (!rest) workSys("usage: #agent market_intel");
       else await cmdAgent(rest.split(/\s+/)[0]);
     }
+    else if (headLower === "#discuss") {
+      const [dept, ...topicParts] = rest.split(/\s+/);
+      if (!dept) { workSys("usage: #discuss market_intel [optional topic]"); return; }
+      const topic = topicParts.join(" ") ||
+        `Open discussion of ${dept}'s latest report: what should we do with these findings, and what are the next steps?`;
+      document.querySelector('nav button[data-v="board"]').click();
+      await brOpen(topic, dept);
+    }
     else if (headLower === "#directive") {
       const [dept, ...changes] = rest.split(/\s+/);
       if (!dept || !changes.length) workSys("usage: #directive market_intel <changes in plain English>");
@@ -787,7 +821,51 @@ $("cmdInput").addEventListener("input", async () => {
   hint.style.display = matches.length ? "block" : "none";
 });
 
+/* ---------- cloud sync: did a scheduled run commit new work? ---------- */
+async function checkSync() {
+  try {
+    const s = await (await fetch("/api/sync/check")).json();
+    if (!s.ok || !s.behind) return;
+    const banner = $("syncBanner");
+    banner.innerHTML = "";
+    const card = document.createElement("div");
+    card.className = "card";
+    card.style.borderColor = "#4a3d22";
+    const what = s.new_reports.length
+      ? `New agent work arrived from the cloud: <b>${esc(s.latest)}</b>`
+      : `The cloud copy is ahead of this computer: <b>${esc(s.latest)}</b>`;
+    card.innerHTML =
+      `<h2 style="color:var(--amber)">new work from your departments</h2>
+       <div style="font-size:12.5px;margin-bottom:8px">${what}</div>
+       <div class="chiprow" id="syncChips"></div>`;
+    banner.appendChild(card);
+
+    const pull = async () => {
+      const r = await (await fetch("/api/sync/pull", { method: "POST" })).json();
+      banner.innerHTML = "";
+      if (!r.ok) { workSys(`sync failed: ${r.output}`); return false; }
+      workSys("✓ pulled the cloud work into HQ");
+      loadOverview(); loadDepartments();
+      return true;
+    };
+    const chips = card.querySelector("#syncChips");
+    [
+      { label: "Pull & build agenda", primary: true,
+        go: async () => { if (await pull()) await cmdIngest(); } },
+      { label: "Pull only", go: pull },
+    ].forEach((o) => {
+      const b = document.createElement("button");
+      if (o.primary) b.className = "primary";
+      b.textContent = o.label;
+      b.onclick = o.go;
+      chips.appendChild(b);
+    });
+  } catch { /* offline is fine — banner is best-effort */ }
+}
+
 checkHealth();
+checkSync();
+renderQuickChips("home");
 loadOverview();
 loadDepartments();
 loadBoardroom();

@@ -87,16 +87,29 @@ class TranscriptEntry:
 
 class BoardroomSession:
     def __init__(self, llm: LLM, config: BrainConfig, hq: HQ, topic: str,
-                 input_fn=input, print_fn=print):
+                 input_fn=input, print_fn=print, exhibit: str = "",
+                 exhibit_label: str = ""):
         self.llm = llm
         self.config = config
         self.hq = hq
         self.topic = topic
         self.input_fn = input_fn
         self.print_fn = print_fn
+        # A shared exhibit (e.g. a department's report) placed before the
+        # whole board — every participant sees it in every round. Blindness
+        # only applies to each other's POSITIONS, not to shared material.
+        self.exhibit = exhibit
+        self.exhibit_label = exhibit_label
         self.participants: list[Participant] = []
         self.transcript: list[TranscriptEntry] = []
         self.synthesis_text = ""
+
+    def _topic_block(self) -> str:
+        text = f"Topic: {self.topic}"
+        if self.exhibit:
+            label = self.exhibit_label or "Shared exhibit"
+            text += f"\n\n{label} (placed before the whole board):\n\n{self.exhibit}"
+        return text
 
     # -- context assembly ------------------------------------------------
 
@@ -206,7 +219,7 @@ class BoardroomSession:
         for p in self.participants:
             reply = self._call_participant(
                 p,
-                f"ROUND: positions\n\nTopic: {self.topic}\n\n"
+                f"ROUND: positions\n\n{self._topic_block()}\n\n"
                 f"File your opening position (max 150 words) with your single "
                 f"strongest reason. No other participant will see this until "
                 f"everyone has filed.",
@@ -226,7 +239,7 @@ class BoardroomSession:
             for p in self.participants:
                 reply = self._call_participant(
                     p,
-                    f"ROUND: rebuttal\n\nTopic: {self.topic}\n\n"
+                    f"ROUND: rebuttal\n\n{self._topic_block()}\n\n"
                     f"The debate so far:\n\n{transcript_so_far}\n\n"
                     f"Rebut or update your position. Updating with a stated "
                     f"reason is encouraged; silent flips get flagged.",
@@ -270,7 +283,7 @@ class BoardroomSession:
             participant = next(p for p in self.participants if p.department == dept)
             reply = self._call_participant(
                 participant,
-                f"ROUND: floor\n\nTopic: {self.topic}\n\n"
+                f"ROUND: floor\n\n{self._topic_block()}\n\n"
                 f"Debate so far:\n\n{self._rendered_transcript()}\n\n"
                 f"The CEO addresses you directly: {at_m.group(2)}",
                 tokens_key="boardroom_floor",
@@ -303,7 +316,7 @@ class BoardroomSession:
         else:
             reply = self.llm.call(
                 self._moderator_blocks(),
-                f"MODE: floor_discussion\n\nTopic: {self.topic}\n\n"
+                f"MODE: floor_discussion\n\n{self._topic_block()}\n\n"
                 f"Debate so far:\n\n{self._rendered_transcript()}\n\n"
                 f"The CEO says: {raw}",
                 max_tokens=self.config.max_tokens["boardroom_floor"],
@@ -345,7 +358,7 @@ class BoardroomSession:
         chunks: list[str] = []
         for delta in self.llm.stream(
             self._synthesis_blocks(),
-            f"MODE: recommendation\n\nTopic: {self.topic}\n\nProduce your synthesis.",
+            f"MODE: recommendation\n\n{self._topic_block()}\n\nProduce your synthesis.",
             max_tokens=self.config.max_tokens["boardroom_synthesis"],
         ):
             chunks.append(delta)
@@ -356,7 +369,7 @@ class BoardroomSession:
     def run_synthesis(self) -> str:
         self.synthesis_text = self.llm.call(
             self._synthesis_blocks(),
-            f"MODE: recommendation\n\nTopic: {self.topic}\n\nProduce your synthesis.",
+            f"MODE: recommendation\n\n{self._topic_block()}\n\nProduce your synthesis.",
             max_tokens=self.config.max_tokens["boardroom_synthesis"],
         )
         self._say("synthesis", "brain", self.synthesis_text)
@@ -403,7 +416,7 @@ class BoardroomSession:
         )
         output = self.llm.call(
             self._synthesis_blocks(),
-            f"MODE: records\n\nTopic: {self.topic}\n\n"
+            f"MODE: records\n\n{self._topic_block()}\n\n"
             f"The CEO's ruling:\n{ruling_text}\n\n"
             f"Today's date is {date.today().isoformat()}. Produce the records.",
             max_tokens=self.config.max_tokens["boardroom_synthesis"],

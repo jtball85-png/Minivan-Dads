@@ -41,6 +41,9 @@ class BoardroomOpenRequest(BaseModel):
     topic: str
     depts: list[str] | None = None
     all: bool = False
+    # Share a department's latest report with the whole board as an exhibit
+    # (the #discuss command). The report text is fetched server-side.
+    exhibit_department: str | None = None
 
 
 class FloorRequest(BaseModel):
@@ -101,6 +104,8 @@ COMMAND_HELP = [
      "help": "Convene a multi-agent debate on a topic (opens the Boardroom tab)."},
     {"command": "#agent", "syntax": "#agent <department>",
      "help": "Run a department agent's research loop now instead of waiting for Thursday."},
+    {"command": "#discuss", "syntax": "#discuss <department> [topic]",
+     "help": "Share that department's latest report with the whole board and open a debate on it."},
     {"command": "#directive", "syntax": "#directive <department> <changes in plain English>",
      "help": "Revise a department's standing orders; you confirm before it's written."},
     {"command": "#help", "syntax": "#help",
@@ -188,10 +193,23 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
         if not topic:
             raise HTTPException(status_code=422, detail="Empty topic")
 
+        exhibit, exhibit_label = "", ""
+        if body.exhibit_department:
+            dept = body.exhibit_department
+            if dept not in config.departments:
+                raise HTTPException(status_code=404, detail=f"Unknown department: {dept}")
+            week = hq.latest_report_week(dept)
+            if not week:
+                raise HTTPException(status_code=404,
+                                    detail=f"{dept} has no report on file to discuss.")
+            exhibit = hq.read_report(dept, week)
+            exhibit_label = f"{dept}'s report ({week})"
+
         session = BoardroomSession(
             make_llm(), config, hq, topic,
             input_fn=lambda prompt: "",  # never used by dashboard flow
             print_fn=lambda s: None,
+            exhibit=exhibit, exhibit_label=exhibit_label,
         )
 
         def event_stream():

@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   run-agent:
@@ -36,13 +37,32 @@ jobs:
         run: python -m brain agent market_intel
 
       - name: Commit the report
+        id: commit
         run: |
           git config user.name "market-intel-agent"
           git config user.email "agent@minivan-dads.invalid"
           git add hq/reports/ hq/escalations/
           if git diff --cached --quiet; then
             echo "Nothing new to commit."
+            echo "committed=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "Market Intel weekly report ($(date -u +%Y-%m-%d))"
             git push
+            echo "committed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # GitHub emails you when an issue opens in your repo (make sure you
+      # "Watch: All activity" on the repo). Zero extra credentials needed.
+      - name: Notify the CEO (GitHub issue -> email)
+        if: steps.commit.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Market Intel filed its report ($(date -u +%Y-%m-%d))" \
+            --body "The scheduled research run finished and committed its report to HQ.
+
+          Next step: open your console (Minivan Dads HQ.bat) — the sync banner will offer one click to pull it in and build the agenda. Or run #ingest yourself.
+
+          Report: https://github.com/${{ github.repository }}/tree/main/hq/reports/market_intel" \
+            || echo "Issue creation failed (non-fatal)."

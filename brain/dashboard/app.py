@@ -56,6 +56,41 @@ def create_app(config: BrainConfig, hq: HQ) -> FastAPI:
         error = app.state.chat_error
         return {"chat": error is None, "chat_error": error}
 
+    def _run_git(*args: str, timeout: int = 30):
+        return subprocess.run(
+            ["git", *args], capture_output=True, text=True,
+            timeout=timeout, cwd=hq.root.parent,
+        )
+
+    @app.get("/api/sync/check")
+    def sync_check():
+        """Has the cloud (scheduled agent runs) committed work we don't have
+        locally? Powers the 'new report arrived' banner."""
+        try:
+            fetch = _run_git("fetch", "origin", timeout=45)
+            if fetch.returncode != 0:
+                return {"ok": False, "error": fetch.stderr.strip()[:300]}
+            behind_raw = _run_git("rev-list", "--count", "HEAD..origin/main").stdout.strip()
+            behind = int(behind_raw or 0)
+            if behind == 0:
+                return {"ok": True, "behind": 0, "new_reports": [], "latest": None}
+            changed = _run_git("diff", "--name-only", "HEAD", "origin/main").stdout.splitlines()
+            new_reports = [f for f in changed if f.startswith("hq/reports/")]
+            latest = _run_git("log", "origin/main", "-1", "--format=%s").stdout.strip()
+            return {"ok": True, "behind": behind, "new_reports": new_reports, "latest": latest}
+        except (OSError, subprocess.SubprocessError, ValueError) as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.post("/api/sync/pull")
+    def sync_pull():
+        """Bring cloud-committed work into the local HQ (fast-forward only —
+        never rewrites local history)."""
+        result = _run_git("pull", "--ff-only", timeout=60)
+        return {
+            "ok": result.returncode == 0,
+            "output": (result.stdout + result.stderr).strip()[-500:],
+        }
+
     @app.get("/api/overview")
     def overview():
         week = hq.current_week_key()
