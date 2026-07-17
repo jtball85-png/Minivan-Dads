@@ -511,7 +511,16 @@ async function cmdIngest() {
       workOk(`✓ agenda written · ${e.decisions} proposed decision(s)`);
       (e.upgrades || []).forEach((u) =>
         workSys(`governance upgraded to CEO REQUIRED: ${u.title} (${u.reasons.join("; ")})`));
-      workSys("next: run #meeting to rule on it, or read it on the Dashboard tab.");
+      if (e.agenda) {
+        workShow();
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `<h2>this week's agenda — read before #meeting</h2><pre class="doc"></pre>`;
+        card.querySelector("pre").textContent = e.agenda;
+        work.log.appendChild(card);
+        card.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+      workSys("when you've read it: #meeting to rule.");
       loadOverview();
     }
   });
@@ -605,11 +614,21 @@ async function cmdMeeting() {
     return;
   }
   const data = await response.json();
-  workSys(`#meeting — board meeting ${data.week} · ${data.items.length} item(s). ` +
-          `Chips rule; typing in the box below discusses the current item with the brain.`);
+  workSys(`#meeting — board meeting ${data.week} · ${data.items.length} item(s).`);
+  if (data.briefing) {
+    workShow();
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<h2>the brain's briefing — what your departments reported</h2><pre class="doc"></pre>`;
+    card.querySelector("pre").textContent = data.briefing;
+    work.log.appendChild(card);
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   meetingItems = data.items;
   meetingIndex = 0;
-  meetingShowItem();
+  workChipSet("read the briefing, then take the first item", [
+    { label: "Begin rulings", primary: true, go: meetingShowItem },
+  ]);
 }
 
 let meetingItems = null, meetingIndex = 0;

@@ -296,12 +296,15 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
             yield _sse({"line": "Reading reports and synthesizing the agenda…"})
             summary = run_ingest(hq, llm=make_llm(), config=config,
                                  print_fn=lambda s: None)
+            agenda_text = summary["path"].read_text(encoding="utf-8")
             yield _sse({
                 "done": True,
                 "path": str(summary["path"]),
                 "decisions": summary["decisions"],
                 "upgrades": summary["upgrades"],
                 "reports_found": summary["reports_found"],
+                # The CEO must SEE the agenda, not a receipt for it.
+                "agenda": agenda_text,
             })
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
@@ -369,8 +372,22 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
         except FileNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e))
         meeting_state["session"] = session
+
+        # The briefing = everything the brain prepared BESIDES the decision
+        # blocks (department syntheses, cross-department notes, escalation
+        # triage). The CEO reads the evidence before ruling on conclusions.
+        agenda = session.agenda
+        cut = agenda.find("## Proposed Decisions")
+        briefing = agenda[:cut].strip() if cut != -1 else agenda.strip()
+        # Triage follows the decision blocks in the agenda format; fold it
+        # into the briefing so the CEO sees the queue before ruling.
+        triage_cut = agenda.find("## Escalation Triage")
+        if triage_cut != -1 and triage_cut > cut:
+            briefing += "\n\n" + agenda[triage_cut:].strip()
+
         return {
             "week": session.week,
+            "briefing": briefing,
             "items": [
                 {"id": i.id, "title": i.title, "block_text": i.block_text, "tag": i.tag}
                 for i in items

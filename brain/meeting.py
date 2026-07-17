@@ -84,6 +84,11 @@ class MeetingSession:
             start = m.start()
             end = blocks[i + 1].start() if i + 1 < len(blocks) else len(self.agenda)
             block_text = self.agenda[start:end].strip()
+            # The last block otherwise swallows whatever section follows the
+            # decisions (Escalation Triage) — trim at the next ## heading.
+            next_section = re.search(r"^## ", block_text, re.MULTILINE)
+            if next_section:
+                block_text = block_text[:next_section.start()].strip()
             tag_m = TAG_IN_BLOCK_RE.search(block_text)
             self.items.append(AgendaItem(
                 id=i,

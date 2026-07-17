@@ -28,6 +28,12 @@ class DashFakeLLM(FakeLLM):
 
 AGENDA = """# Board Meeting Agenda — WEEK
 
+## Department Syntheses
+
+### market_intel
+
+The department found competitors circling and quantified trademark costs.
+
 ## Proposed Decisions
 
 #### Decision: Approve the sticker
@@ -39,6 +45,11 @@ AGENDA = """# Board Meeting Agenda — WEEK
 - Recommendation: File now.
 - Checklist: money=yes, brand=yes, legal=yes, irreversible=no
 - Tag: [CEO REQUIRED]
+
+## Escalation Triage
+
+### Urgent
+- None.
 """
 
 SYNTHESIS = """## Minutes
@@ -102,6 +113,8 @@ class TestIngestCommand:
         assert final["decisions"] == 2
         agenda_path = hq.root / "meetings" / f"{hq.current_week_key()}-agenda.md"
         assert agenda_path.exists()
+        # The CEO must be SHOWN the agenda, not a receipt for it.
+        assert "Approve the sticker" in final["agenda"]
 
 
 class TestMeetingFlow:
@@ -120,6 +133,10 @@ class TestMeetingFlow:
         data = self._start(client)
         assert [i["title"] for i in data["items"]] == ["Approve the sticker", "File the trademark"]
         assert data["items"][1]["tag"] == "CEO REQUIRED"
+        # Briefing = evidence before rulings: syntheses + triage, no decision blocks
+        assert "competitors circling" in data["briefing"]
+        assert "Escalation Triage" in data["briefing"]
+        assert "#### Decision" not in data["briefing"]
 
         assert client.post("/api/meeting/ruling",
                            json={"item_id": 0, "action": "approve"}).json() == {"recorded": True}
