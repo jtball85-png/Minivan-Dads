@@ -122,6 +122,8 @@ COMMAND_HELP = [
      "help": "Share that department's latest report with the whole board and open a debate on it."},
     {"command": "#directive", "syntax": "#directive <department> <changes in plain English>",
      "help": "Revise a department's standing orders; you confirm before it's written."},
+    {"command": "#abandon", "syntax": "#abandon",
+     "help": "Clear a stuck meeting or boardroom debate without recording anything — the universal escape hatch."},
     {"command": "#help", "syntax": "#help",
      "help": "Show this list."},
     {"command": "@department", "syntax": "@market_intel <question>",
@@ -315,6 +317,26 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
         state["session"] = None
         state["prepared"] = None
         return {"abandoned": True}
+
+    @app.get("/api/boardroom-status")
+    def boardroom_status():
+        """State lives in this server process, not the browser — a page
+        refresh (or a second tab) loses the browser's memory of an
+        in-progress debate while the server keeps holding it. The UI polls
+        this on load so it can offer 'resume view / abandon' instead of the
+        CEO hitting a 409 with no way out."""
+        session = state["session"]
+        if session is None:
+            return {"active": False}
+        return {
+            "active": True,
+            "topic": session.topic,
+            "participants": [p.department for p in session.participants],
+            "transcript": [
+                {"round": e.round, "speaker": e.speaker, "text": e.text}
+                for e in session.transcript
+            ],
+        }
 
     # ------------------------------------------------------------------
     # Command-bar endpoints: everything the CLI can do, from the browser.

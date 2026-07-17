@@ -258,6 +258,26 @@ class TestBoardroomRoutes:
         assert any("did not ratify" in w for w in data["warnings"])
         assert "Tier 2" not in hq.read_directive("market_intel")
 
+    def test_status_reports_inactive_by_default(self, config, hq, tmp_hq_root):
+        client, _ = make_client(config, hq, tmp_hq_root, [])
+        assert client.get("/api/boardroom-status").json() == {"active": False}
+
+    def test_status_reports_active_session_with_transcript(self, config, hq, tmp_hq_root):
+        client, llm = make_client(config, hq, tmp_hq_root,
+                                  ["p", "r", "SECOND_ROUND: no"])
+        open_debate(client, llm)
+        status = client.get("/api/boardroom-status").json()
+        assert status["active"] is True
+        assert status["participants"] == ["market_intel"]
+        assert any(e["text"] == "p" for e in status["transcript"])
+
+    def test_status_after_abandon_is_inactive(self, config, hq, tmp_hq_root):
+        client, llm = make_client(config, hq, tmp_hq_root,
+                                  ["p", "r", "SECOND_ROUND: no"])
+        open_debate(client, llm)
+        client.post("/api/boardroom/abandon")
+        assert client.get("/api/boardroom-status").json() == {"active": False}
+
     def test_abandon_clears_session(self, config, hq, tmp_hq_root):
         client, llm = make_client(config, hq, tmp_hq_root,
                                   ["p", "r", "SECOND_ROUND: no",

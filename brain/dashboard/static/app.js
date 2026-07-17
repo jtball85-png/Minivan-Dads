@@ -292,6 +292,52 @@ $("brForm").onsubmit = async (ev) => {
   }
 };
 
+function brShowAbandonOption(detail) {
+  brSys(`boardroom: ${detail}`);
+  $("brChips").innerHTML = `<span class="hint">stuck? this clears the server's memory of the old debate (nothing was recorded yet)</span>`;
+  const b = document.createElement("button");
+  b.className = "primary";
+  b.textContent = "Abandon the open debate";
+  b.onclick = async () => {
+    await fetch("/api/boardroom/abandon", { method: "POST" });
+    brPhase = "closed"; meetingItems = null;
+    $("brChips").innerHTML = "";
+    brSys("✓ abandoned — the board room is clear. Open a new topic whenever you're ready.");
+  };
+  $("brChips").appendChild(b);
+}
+
+async function brCheckStatus() {
+  try {
+    const s = await (await fetch("/api/boardroom-status")).json();
+    if (!s.active) return;
+    // The server remembers a debate the browser forgot (e.g. after a
+    // refresh mid-debate). Show what's there and let the CEO choose.
+    $("brLog").innerHTML = "";
+    brDeptColors = {};
+    s.participants.forEach((d, i) => (brDeptColors[d] = DEPT_COLORS[i % DEPT_COLORS.length]));
+    brSys(`a debate is still open from earlier: "${s.topic}"`);
+    s.transcript.forEach((e) => brMsg(e.speaker, e.text));
+    brPhase = "floor";
+    brSetInput("@department to question anyone, bare text talks to the brain…", "send");
+    workShow(); // no-op if unrelated, keeps consistent visual state
+    $("brChips").innerHTML = `<span class="hint">pick up where you left off, or start over</span>`;
+    const resumeBtn = document.createElement("button");
+    resumeBtn.className = "primary";
+    resumeBtn.textContent = "Continue this debate";
+    resumeBtn.onclick = () => { $("brChips").innerHTML = ""; brFloorChips(); };
+    const abandonBtn = document.createElement("button");
+    abandonBtn.textContent = "Abandon it";
+    abandonBtn.onclick = async () => {
+      await fetch("/api/boardroom/abandon", { method: "POST" });
+      brPhase = "closed";
+      $("brLog").innerHTML = ""; $("brChips").innerHTML = "";
+      brSys("✓ abandoned — the board room is clear.");
+    };
+    $("brChips").append(resumeBtn, abandonBtn);
+  } catch { /* best-effort */ }
+}
+
 async function brOpen(topic, exhibitDept) {
   $("brLog").innerHTML = "";
   $("brChips").innerHTML = "";
@@ -304,7 +350,11 @@ async function brOpen(topic, exhibitDept) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ topic, exhibit_department: exhibitDept || null }),
   });
-  if (!response.ok) throw new Error((await response.json()).detail || `HTTP ${response.status}`);
+  if (!response.ok) {
+    const detail = (await response.json()).detail || `HTTP ${response.status}`;
+    if (response.status === 409) { brShowAbandonOption(detail); return; }
+    throw new Error(detail);
+  }
   brPhase = "debating";
   let round = "";
   await readSSE(response, (e) => {
@@ -758,6 +808,12 @@ const COMMANDS = {
   },
   "#ingest": cmdIngest,
   "#meeting": cmdMeeting,
+  "#abandon": async () => {
+    const r1 = await fetch("/api/boardroom/abandon", { method: "POST" });
+    const r2 = await fetch("/api/meeting/abandon", { method: "POST" });
+    brPhase = "closed"; meetingItems = null;
+    workSys("✓ any open boardroom debate or meeting has been cleared — nothing was recorded from it.");
+  },
 };
 
 $("cmdBar").onsubmit = async (ev) => {
@@ -875,6 +931,7 @@ async function checkSync() {
 
 checkHealth();
 checkSync();
+brCheckStatus();
 renderQuickChips("home");
 loadOverview();
 loadDepartments();
