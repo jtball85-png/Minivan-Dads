@@ -1,5 +1,5 @@
 # Project: Minivan Dads — The Brain (COO)
-Last updated: 2026-07-16 by Claude Code
+Last updated: 2026-07-17 by Claude Code
 
 ## What this project is
 Minivan Dads Inc. is a print-on-demand apparel brand (Printful catalog, "Old Guys Rule" playbook) targeting minivan-driving dads, aiming for $200k+/yr net income or a seven-figure exit. This project is "The Brain" — Phase 1 of a multi-agent company system: a CLI orchestrator (COO) plus HQ, a git-diffable Markdown filesystem that is the company's single source of truth. Future department agents (Market Intel, Creative, Content, Product, Storefront, Customer, Paid Ads, Finance) will read directives from and write reports to HQ in later phases — not built yet, but the Phase 1 design must not box them out.
@@ -46,14 +46,16 @@ The CEO (human) runs CLI commands against HQ:
 Phase 1 complete and acceptance-tested: HQ + all five brain commands, plus the §7 additions from the 7/16 specs — free-text-everywhere CLI with `brain` console script, executor framework (registry/limits/capability ladder/rollback, fake connectors only), boardroom protocol (CLI + dashboard, honesty norm enforced structurally), and the CEO dashboard (four tabs, streaming ask chat, live boardroom). Phase 2 is live: market_intel is active at Tier 0 with a real directive, running Thursday nights via GitHub Actions (secret set, workflow active); its first live report and escalation are in HQ. Phase 3 (Creative + Content) is gated on the Phase 2 exit criteria — a directive change visibly changing the next report, plus a hard shop-open date — which need real calendar weeks and CEO work, not more code. Handoff docs live under `docs/specs/`; roadmap also at `hq/charter/roadmap.md`. 174 tests passing.
 
 ## Where we left off
-Last commit: 65b5469 — Board records: naming/trademark boardroom session (CEO-run)
+Last commit: 0e75977 — End of day 2026-07-17 — context and memory updated
 In progress: none
 Branch: main
 
 ## What's next
-- [ ] Friday: check Actions tab for the first scheduled market_intel run (ESC-003), run #ingest + #meeting, rule on ESC-002 — CEO (dashboard)
-- [ ] Next week: change market_intel's directive at a meeting and confirm the following Thursday's report reflects it — the Phase 2 exit test
-- [ ] CEO-owned: Class 25 trademark filing, name/domain/handle lockdown, hard shop-open date before Phase 3
+- [ ] CEO console review — build queue (from the fresh-eyes review): #5 cost visibility (per-action estimate + weekly burn) and #6 top commands as visible buttons are the next easy wins; #4 consolidate UI surfaces gets a PLAN-MODE discussion first; then #7 mobile/remote access, #8 decision-log search, #9 first-run guide
+- [ ] Phase 2 exit test: change market_intel's directive at a meeting and confirm the following Thursday's report reflects it
+- [ ] Rule on open escalations at a meeting: ESC-002 (trademark prior-use), ESC-004 (handle/domain verification gap — now closed by the live-check tools), ESC-005 (ITU filing costs)
+- [ ] CEO-owned: Class 25 trademark filing (PARKED pending alternatives + verification), name/domain/handle lockdown (minivandads.com registered to a 3rd party; .co/.shop available), hard shop-open date before Phase 3
+- [ ] Update market_intel's directive to drop the now-stale "no live-check tooling" line (via #directive)
 
 ## File structure
 ```
@@ -99,5 +101,6 @@ Browser tasks, desktop automation, file management.
 Use project-context-updater.html on Cowork-heavy days.
 
 ## Change log
+- 2026-07-17 — First real board cycle in the dashboard, then hardening + review fixes: brief-the-CEO (02109b4); CEO notification loop — sync banner, report-landed emails, #discuss, quick chips (ac13e81); SSE error guard (62eb6e2); stuck-boardroom fix + #abandon (cf9291c); live-check tools for agents — RDAP domains + honest handle checks (2d12436, fadd51f, 104b522); market_intel Phase-2 loop proven (reports auto-committed; minivandads.com found registered to a 3rd party); board record — brand-name research reopened, trademark PARKED (d2e1c64); fresh-eyes CEO review → built #collab (ed9029a), actionable Departments tab (a5d0cc0), 'needs you' panel (c22ac31); 188 → 238 tests — Source: Claude Code
 - 2026-07-16 — Increment 6 polish (142ea6d); §7 additions A–D: free-text CLI + brain console script (0d670c0), executor framework (867bb1a), boardroom (e3a251b), read-only dashboard (d77b0e3); docs to docs/specs (42dddaf); dashboard chat + live boardroom (413eaed, 5367468); Phase 2 launch — market_intel live on GitHub Actions (0126b57, c4ce7e4); docs catch-up (e58fa00); chat env fix (7e7fbf4); one-click launcher + silent-failure defenses (12deb34, 600c466); dashboard command bar #commands/@dept (8b54fac); root cleanup (7354bfc); CLAUDE.md (80430ff); CEO's own boardroom session records committed — Source: Claude Code
 - 2026-07-15 — Project initialized — Source: Claude Code

@@ -1,5 +1,5 @@
 # Project Memory
-Last updated: 2026-07-16 (end of day)
+Last updated: 2026-07-17 (end of day)
 
 This file captures decisions, reasoning, and session context that
 project-context.md doesn't hold. It is Claude's memory between sessions.
@@ -22,6 +22,38 @@ Decisions that shaped the project — keep these forever.
 ## Sessions
 
 Most recent session at the top.
+
+## Session — 2026-07-17
+
+**Focus:** First real board cycle in the dashboard (Friday), then hardening/UX from live use, live-check tools for agents, and a fresh-eyes CEO console review with the top 3 fixes built.
+
+**Decisions made:**
+- Live-check tools for agents (brain/tools.py): read-only HTTP, so they bypass the executor and stay Tier 0 — checking if a URL exists writes/spends nothing. Domain checks via RDAP (free, no key, high confidence). Handle checks: only Etsy gives a real answer; Instagram/TikTok/X are "inconclusive/unverifiable" by design (proven, not guessed).
+- Honesty over false confidence, twice: (1) agents must be reminded IN THE TRIGGER MESSAGE to use tools — passive system-prompt guidance was silently ignored (0 tool calls → 23 with the reminder); (2) Instagram/TikTok marker heuristic was proven worthless by a nonsense-handle test (returned "taken" for a string that can't exist) → now always "inconclusive", never a guess.
+- CEO overruled the board (via boardroom): brand-name research REOPENED, "Minivan Dads" is a candidate not final, trademark filing PARKED pending live verification + a real slate of 5-10 alternatives. Reason: don't build brand equity on a name that might change.
+- Notifications = GitHub issue on report-landing (github.token, no new secret) → GitHub emails the CEO if watching the repo. Real SMTP deferred.
+- CEO review priority order adopted as the build queue (see What's next). Items 1-3 (collaboration, actionable departments, needs-you panel) built this session; 5 and 6 are next-session easy wins; 4 (consolidate UI) gets a plan-mode discussion first. All remaining next session.
+
+**Problems solved:**
+- Dashboard "hang forever" on Pull & build agenda = an Anthropic API 500 killing the SSE stream silently. Fixed with a _guard wrapper on all 8 streaming endpoints → any mid-stream exception becomes a visible {error} event; frontend surfaces "usually momentary, try again".
+- Stuck-boardroom trap: server holds the debate, a page refresh loses the browser's memory of it → 409 with no way out. Fixed: /api/boardroom-status (renamed from /api/boardroom/status which collided with the {filename} transcript route), resume/abandon UI, and #abandon universal escape hatch.
+- Brain wasn't briefing the CEO: #ingest showed a receipt not the agenda; #meeting jumped to rulings. Now #ingest renders the full agenda; #meeting opens with the briefing (syntheses + triage) behind a "Begin rulings" gate.
+- Needs-you panel live-caught a real subtlety: an agenda built before newer escalations is STALE — holding a meeting on it misses them. Freshness now = agenda exists AND covers every open ESC id AND minutes newer than agenda → says "refresh the agenda" (#ingest) not "hold the meeting". (CEO used the button; W29 agenda now covers ESC-004/005.)
+- Browser cache: old console page served after a restart (all the 404s traced to a stale server process too). Ctrl+F5 hard-refresh is the fix; noted for the CEO.
+
+**Approaches discussed:**
+- Fresh-eyes CEO console review (Opus persona). Headline: the tool is ahead of the business — a beautiful cockpit for a plane still in the hangar; set a hard "first product designed" date. Full priority list is now the What's next queue.
+- Inter-department communication was hub-and-spoke with no spokes touching — #collab fills the missing middle (cooperative joint deliverable, no debate, no records). Boardroom = adversarial; collab = cooperative; consult (@dept) = one department.
+- Art-business clone still on the horizon (advisory, prior session) — unchanged.
+
+**Left unresolved:**
+- CEO-owned, still open: Class 25 trademark filing (PARKED), name/domain/handle lockdown (minivandads.com is registered to a 3rd party; .co/.shop available), hard shop-open date before Phase 3, and market_intel's directive still has a stale "no live-check tooling" line the CEO can update via #directive.
+- Open escalations awaiting a ruling: ESC-002, ESC-004, ESC-005 (W29 agenda now covers them — CEO can #meeting).
+- CEO review items 4-9 not yet built (4 = plan-mode discussion next session; 5,6 = easy wins next; 7,8,9 later).
+- "Tool ahead of business" — no product designed yet; standing strategic note.
+
+**Files changed this session:**
+Across ~14 commits (80430ff..c22ac31): new brain/tools.py, brain/collaborate.py, brain/prompts/{collaborate,consult}.md; brain/llm.py (client-tool loop + stream error handling reused), brain/agent.py (tool wiring + trigger reminder), brain/dashboard/{app.py,chat.py,static/app.js,static/index.html} (needs-you panel, sync banner, #collab/#discuss/#abandon, actionable departments, boardroom-status, error guard); brain/hq.py (write_collaboration, minutes collision-suffix); .github/workflows/market-intel.yml (issue notification); tests/ (test_tools, test_llm_tools, test_collaborate + additions) — 188 → 238 tests passing.
 
 ## Session — 2026-07-16
 
