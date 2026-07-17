@@ -10,7 +10,8 @@ from tests.fake_llm import FakeLLM
 
 class ResearchFakeLLM(FakeLLM):
     def call_with_web_search(self, system_blocks, user_message,
-                             max_tokens=8192, max_searches=8):
+                             max_tokens=8192, max_searches=8,
+                             extra_tools=None, tool_executor=None):
         return self.call(system_blocks, user_message, max_tokens)
 
 

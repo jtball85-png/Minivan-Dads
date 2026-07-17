@@ -19,6 +19,7 @@ from brain.config import BrainConfig
 from brain.hq import HQ
 from brain.llm import LLM
 from brain.models import EscalationItem
+from brain.tools import TOOL_SCHEMAS, execute_tool
 
 ESCALATION_BLOCK_RE = re.compile(
     r"^### ESCALATION\s*\n- Urgency:\s*(urgent|normal)\s*\n- Summary:\s*(.+)$",
@@ -74,6 +75,11 @@ def run_agent(dept: str, config: BrainConfig, hq: HQ, llm: LLM,
         f"standing directive and produce this week's report.",
         max_tokens=config.max_tokens["agent"],
         max_searches=config.agent_max_searches,
+        # Read-only live-check tools (domain/handle availability) — no
+        # write/spend capability, so these bypass the executor and stay
+        # inside Tier 0 for every department per the action-layer spec.
+        extra_tools=TOOL_SCHEMAS,
+        tool_executor=execute_tool,
     )
 
     report = report.strip() + "\n"
