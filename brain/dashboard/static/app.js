@@ -87,15 +87,46 @@ async function loadDepartments() {
   document.querySelectorAll(".dept").forEach((b) => (b.onclick = () => showDept(b.dataset.name)));
 }
 
+/* Prefill the command bar (focus) or run it outright. The department action
+   buttons route through the SAME command pipeline as typing — one code path,
+   already-tested endpoints. */
+function fillCmd(text) { $("cmdInput").value = text; $("cmdInput").focus(); }
+function runCmd(text) { $("cmdInput").value = text; $("cmdBar").requestSubmit(); }
+
+/* (department, action) -> command string. Pure + exported for testing. */
+function deptActionCommand(name, action) {
+  return {
+    ask: `@${name} `,
+    run: `#agent ${name}`,
+    order: `#directive ${name} `,
+    collab: `#collab ${name}, `,
+  }[action];
+}
+window.deptActionCommand = deptActionCommand;
+
 async function showDept(name) {
   const d = await (await fetch(`/api/departments/${encodeURIComponent(name)}`)).json();
   $("deptGrid").style.display = "none";
   const det = $("deptDetail");
   det.style.display = "block";
+
+  // Active departments can be run now; dormant ones just exit, so we hide
+  // "Run it now" for them and keep the actions that actually do something.
+  const active = d.status === "active";
+  const actions = [
+    { key: "ask", label: "Ask it", fill: true },
+    ...(active ? [{ key: "run", label: "Run it now" }] : []),
+    { key: "order", label: "Give it an order", fill: true },
+    { key: "collab", label: "Collaborate…", fill: true },
+  ];
+
   det.innerHTML = `
     <button class="back">← all departments</button>
     <div class="card">
       <h2>${esc(d.name)} ${TIER_PILL(d)}</h2>
+      <div class="chiprow" id="deptActions">
+        <span class="hint">act on this department</span>
+      </div>
       <div class="kv"><div class="k">standing directive</div>
         ${d.directive ? `<pre class="doc">${esc(d.directive)}</pre>` : `<span class="dim">none on file</span>`}</div>
       <div class="kv"><div class="k">latest report${d.latest_report_week ? " — " + esc(d.latest_report_week) : ""}</div>
@@ -109,6 +140,19 @@ async function showDept(name) {
           ? d.directive_history.map((h) => `<div class="row"><span>${esc(h.message)}</span><span class="t">${esc(h.commit)} · ${esc(h.date)}</span></div>`).join("")
           : `<span class="dim">no history available</span>`}</div>
     </div>`;
+
+  const actionBar = det.querySelector("#deptActions");
+  actions.forEach((a, i) => {
+    const b = document.createElement("button");
+    if (i === 0) b.className = "primary";
+    b.textContent = a.label;
+    b.onclick = () => {
+      const cmd = deptActionCommand(d.name, a.key);
+      a.fill ? fillCmd(cmd) : runCmd(cmd);
+    };
+    actionBar.appendChild(b);
+  });
+
   det.querySelector(".back").onclick = () => {
     det.style.display = "none";
     $("deptGrid").style.display = "grid";
