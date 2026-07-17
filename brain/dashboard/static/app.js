@@ -39,6 +39,49 @@ function renderQuickChips(tab) {
   });
 }
 
+/* ---------- "what needs me today" ---------- */
+async function loadAttention() {
+  const box = $("needsYou");
+  let data;
+  try { data = await (await fetch("/api/attention")).json(); }
+  catch { box.innerHTML = ""; return; }
+
+  if (data.all_clear) {
+    box.innerHTML =
+      `<div class="card" style="border-color:#274538">
+         <h2 style="color:var(--green)">you're all caught up</h2>
+         <div class="dim" style="font-size:12px">Nothing is waiting on you right now. The next report lands Thursday night.</div>
+       </div>`;
+    return;
+  }
+
+  const PRIORITY_MARK = { 0: "▲", 1: "●", 2: "◦", 3: "·" };
+  box.innerHTML =
+    `<div class="card" style="border-color:#4a3d22">
+       <h2 style="color:var(--amber)">needs you</h2>
+       <div id="needsList"></div>
+     </div>`;
+  const list = box.querySelector("#needsList");
+  data.items.forEach((it) => {
+    const row = document.createElement("div");
+    row.className = "row";
+    const mark = PRIORITY_MARK[it.priority] ?? "◦";
+    const cls = it.priority === 0 ? "urgent" : "";
+    row.innerHTML =
+      `<span class="${cls}">${mark} ${esc(it.title)}` +
+      (it.detail ? `<br><span class="dim" style="font-size:11px">${esc(it.detail)}</span>` : "") +
+      `</span>`;
+    if (it.action_command) {
+      const b = document.createElement("button");
+      b.textContent = it.action_label;
+      b.style.cssText = "font-family:inherit;font-size:11.5px;color:var(--amber);background:var(--chip);border:1px solid #4a3d22;border-radius:6px;padding:5px 11px;cursor:pointer;white-space:nowrap";
+      b.onclick = () => runCmd(it.action_command);
+      row.appendChild(b);
+    }
+    list.appendChild(row);
+  });
+}
+
 /* ---------- dashboard ---------- */
 async function loadOverview() {
   const data = await (await fetch("/api/overview")).json();
@@ -69,6 +112,10 @@ async function loadOverview() {
   $("agenda").innerHTML = data.this_week_agenda
     ? `<pre class="doc">${esc(data.this_week_agenda)}</pre>`
     : `<div class="dim">No agenda for ${esc(data.week)} yet — run <code>brain ingest</code>.</div>`;
+
+  // The "needs you" panel refreshes with the rest of the dashboard, so it
+  // updates after every ingest/meeting/agent action too.
+  loadAttention();
 }
 
 /* ---------- departments ---------- */

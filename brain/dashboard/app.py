@@ -127,6 +127,81 @@ def create_app(config: BrainConfig, hq: HQ) -> FastAPI:
             "this_week_agenda": agenda,
         }
 
+    @app.get("/api/attention")
+    def attention():
+        """The 'what needs me today' list — everything genuinely waiting on a
+        CEO decision, prioritized, each with a one-click action. Read-only,
+        no model call. Priority 0 = urgent, higher = softer."""
+        week = hq.current_week_key()
+        escalations = hq.read_escalation_queue()
+        urgent = [e for e in escalations if e.urgency == "urgent"]
+
+        agenda_path = hq.root / "meetings" / f"{week}-agenda.md"
+        minutes_path = hq.root / "meetings" / f"{week}-minutes.md"
+        agenda_exists = agenda_path.exists()
+        agenda_text = agenda_path.read_text(encoding="utf-8") if agenda_exists else ""
+
+        # An agenda that predates a currently-open escalation is stale — it
+        # can't be resolved at a meeting it never mentioned. So "fresh" means:
+        # it exists and every open escalation id appears in it.
+        agenda_covers = all(e.id in agenda_text for e in escalations)
+        last_meeting = hq.last_meeting_date()
+        since = hq.week_key_for_date(last_meeting) if last_meeting else "1970-W01"
+        has_new_reports = any(entries for entries in hq.discover_reports(since).values())
+        # A meeting is "current" only if its minutes are at least as new as the
+        # agenda — a rebuilt agenda means the last meeting is stale.
+        meeting_current = (
+            minutes_path.exists() and agenda_exists
+            and minutes_path.stat().st_mtime >= agenda_path.stat().st_mtime
+        )
+
+        items: list[dict] = []
+
+        for e in urgent:
+            items.append({
+                "kind": "urgent_escalation", "priority": 0,
+                "title": f"Urgent — {e.summary}",
+                "detail": f"{e.id} · raised by {e.raised_by}",
+                "action_label": "Ask the brain",
+                "action_command": f"What should I do about {e.id}: {e.summary}",
+            })
+
+        # Exactly one meeting-state action, driven by what actually needs doing.
+        if (escalations or has_new_reports) and (not agenda_exists or not agenda_covers):
+            reasons = []
+            if escalations:
+                reasons.append(f"{len(escalations)} open item(s)")
+            if has_new_reports and not agenda_exists:
+                reasons.append("new reports")
+            items.append({
+                "kind": "build_agenda", "priority": 1,
+                "title": ("Reports and open items are in — build this week's agenda"
+                          if not agenda_exists else
+                          "New items since the agenda was built — refresh it"),
+                "detail": ", ".join(reasons) + " → synthesize the agenda, then hold the meeting",
+                "action_label": "Build the agenda" if not agenda_exists else "Refresh the agenda",
+                "action_command": "#ingest",
+            })
+        elif agenda_exists and agenda_covers and not meeting_current:
+            items.append({
+                "kind": "hold_meeting", "priority": 1,
+                "title": "This week's agenda is ready — hold the board meeting",
+                "detail": f"agenda for {week} covers the open items; no meeting held on it yet",
+                "action_label": "Hold the meeting", "action_command": "#meeting",
+            })
+
+        stale = hq.stale_directives(days=config.stale_directive_days)
+        if stale:
+            items.append({
+                "kind": "stale_directives", "priority": 3,
+                "title": f"{len(stale)} directive(s) haven't been updated in a while",
+                "detail": ", ".join(stale),
+                "action_label": None, "action_command": None,
+            })
+
+        items.sort(key=lambda x: x["priority"])
+        return {"items": items, "all_clear": not items}
+
     @app.get("/api/departments")
     def departments():
         return [
