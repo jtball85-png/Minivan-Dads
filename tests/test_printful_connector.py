@@ -111,6 +111,38 @@ class TestExecuteAndRestore:
         assert ei.value.status == 401
 
 
+class TestStoreId:
+    def test_store_id_sets_header_on_auth_calls(self):
+        t = FakeTransport()
+        t.set("POST", "/store/products", 200, {"result": {"id": 1}})
+        c = PrintfulConnector(api_key="k", store_id=12345, transport=t)
+        c.execute(REGISTRY["printful.create_product"],
+                  {"product_id": 71, "variant_ids": [1], "print_file_url": "u",
+                   "placement": "front", "product_name": "n", "external_id": "e"})
+        assert t.calls[0]["headers"]["X-PF-Store-Id"] == "12345"
+
+    def test_resolve_single_store(self):
+        t = FakeTransport()
+        t.set("GET", "/stores", 200, {"result": [{"id": 777, "name": "Minivan Dads"}]})
+        c = PrintfulConnector(api_key="k", transport=t)
+        assert c.resolve_store_id() == 777
+        assert c.store_id == 777
+
+    def test_resolve_no_store_raises(self):
+        t = FakeTransport()
+        t.set("GET", "/stores", 200, {"result": []})
+        c = PrintfulConnector(api_key="k", transport=t)
+        with pytest.raises(PrintfulError, match="no Printful store exists"):
+            c.resolve_store_id()
+
+    def test_resolve_multiple_stores_raises(self):
+        t = FakeTransport()
+        t.set("GET", "/stores", 200, {"result": [{"id": 1, "name": "A"}, {"id": 2, "name": "B"}]})
+        c = PrintfulConnector(api_key="k", transport=t)
+        with pytest.raises(PrintfulError, match="2 stores found"):
+            c.resolve_store_id()
+
+
 class TestMockups:
     def test_polls_until_completed(self):
         t = FakeTransport()

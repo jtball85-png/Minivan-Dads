@@ -59,9 +59,10 @@ def _urllib_transport(method: str, url: str, headers: dict, body: bytes | None):
 
 class PrintfulConnector:
     def __init__(self, api_key: str | None = None, base_url: str = BASE_URL,
-                 transport: Transport | None = None):
+                 transport: Transport | None = None, store_id: int | None = None):
         self.api_key = api_key
         self.base_url = base_url
+        self.store_id = store_id  # account-level tokens must name the store
         self._transport = transport or _urllib_transport
 
     def _call(self, method: str, path: str, body: dict | None = None, auth: bool = False):
@@ -70,11 +71,29 @@ class PrintfulConnector:
             if not self.api_key:
                 raise PrintfulError(0, "PRINTFUL_API_KEY required for this call but not set")
             headers["Authorization"] = f"Bearer {self.api_key}"
+            # Account-level tokens require the target store; store-scoped
+            # tokens ignore this header, so sending it is always safe.
+            if self.store_id is not None:
+                headers["X-PF-Store-Id"] = str(self.store_id)
         body_bytes = json.dumps(body).encode("utf-8") if body is not None else None
         status, data = self._transport(method, self.base_url + path, headers, body_bytes)
         if status >= 400 or status == 0:
             raise PrintfulError(status, (data or {}).get("error") or data)
         return data
+
+    def resolve_store_id(self) -> int:
+        """Auto-detect the store for an account-level token: with exactly one
+        store, use it; otherwise say so plainly rather than guess."""
+        data = self._call("GET", "/stores", auth=True)
+        stores = data.get("result", [])
+        if len(stores) == 1:
+            self.store_id = stores[0]["id"]
+            return self.store_id
+        if not stores:
+            raise PrintfulError(0, "no Printful store exists yet — add a "
+                                   "'Manual order platform / API' store first")
+        raise PrintfulError(0, f"{len(stores)} stores found; set PRINTFUL_STORE_ID "
+                               "to pick one: " + ", ".join(f"{s['id']}={s['name']}" for s in stores))
 
     # -- catalog reads (unauthenticated) --------------------------------
 
