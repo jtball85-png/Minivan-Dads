@@ -176,3 +176,27 @@ class TestRunAgent:
         run_agent("market_intel", config, hq, llm, print_fn=lambda s: None)
         assert captured["extra_tools"] is not None
         assert captured["tool_executor"] is not None
+
+    def test_exhibit_reaches_the_dynamic_context(self, agent_env):
+        """A garage research exhibit handed to a run shows up alongside the
+        directive and previous report — the garage-to-board handoff point
+        (CLAUDE.md's 'Two rooms' section)."""
+        config, hq = agent_env
+        llm = ResearchFakeLLM(responses=[REPORT_PLAIN])
+        run_agent(
+            "market_intel", config, hq, llm, print_fn=lambda s: None,
+            exhibit="Top dad-brand hats lean trucker-style, olive/navy.",
+            exhibit_label="Garage research exhibit: dad-brand-hats",
+        )
+
+        dynamic = llm.calls[0].system_blocks[1]["text"]
+        assert "Garage research exhibit: dad-brand-hats" in dynamic
+        assert "Top dad-brand hats lean trucker-style, olive/navy." in dynamic
+
+    def test_no_exhibit_means_no_exhibit_section(self, agent_env):
+        config, hq = agent_env
+        llm = ResearchFakeLLM(responses=[REPORT_PLAIN])
+        run_agent("market_intel", config, hq, llm, print_fn=lambda s: None)
+
+        dynamic = llm.calls[0].system_blocks[1]["text"]
+        assert "exhibit" not in dynamic.lower()

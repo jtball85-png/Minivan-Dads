@@ -37,8 +37,8 @@ departments:
     status: active   # activated 2026-07-16 (Phase 2 launch, CEO decision — see decision log)
     report_cadence: weekly
   - name: creative
-    tier: 0
-    status: dormant
+    tier: 1
+    status: active   # activated 2026-07-19 (Phase 3 opened, CEO decision — see decision log)
     report_cadence: weekly
   - name: content
     tier: 0

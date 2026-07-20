@@ -36,7 +36,7 @@ def parse_escalations(report: str) -> list[tuple[str, str]]:
 
 
 def run_agent(dept: str, config: BrainConfig, hq: HQ, llm: LLM,
-              print_fn=print) -> int:
+              print_fn=print, exhibit: str = "", exhibit_label: str = "") -> int:
     """Execute one scheduled run for a department. Returns an exit code
     (0 = ok / nothing to do, 1 = misconfigured)."""
     dept_config = config.departments.get(dept)
@@ -63,6 +63,12 @@ def run_agent(dept: str, config: BrainConfig, hq: HQ, llm: LLM,
         dynamic_parts.append(f"### Your previous report ({last_week})\n\n{last_report}")
     else:
         dynamic_parts.append("### Your previous report\n\nNone — this is your first report.")
+    if exhibit:
+        # A garage research finding handed to this run (CLAUDE.md's "Two
+        # rooms" — the garage-to-board handoff point). One-time context,
+        # not part of the department's own memory unless it acts on it.
+        label = exhibit_label or "Research exhibit from the CEO"
+        dynamic_parts.append(f"### {label}\n\n{exhibit}")
     system_blocks = [
         {"type": "text", "text": static, "cache_control": {"type": "ephemeral"}},
         {"type": "text", "text": "\n\n".join(dynamic_parts)},

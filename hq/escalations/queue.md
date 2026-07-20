@@ -46,3 +46,9 @@ position in this file):
 - Raised by: market_intel
 - Urgency: normal
 - Summary: This week's Instagram/TikTok availability-check tool gave a false "taken" result even on a nonsense test string — don't treat any Instagram/TikTok "taken" finding from this cycle's report as verified; a manual human check is needed before locking in a handle decision.
+
+## ESC-008
+- Raised: 2026-07-19
+- Raised by: creative
+- Urgency: normal
+- Summary: "Minivan Dads" as an exact phrase is already in commercial use on Amazon/Walmart/Zazzle (generic novelty tee, no logo/badge) — recommend the Class 25 trademark clearance search explicitly account for this prior commercial use before filing.

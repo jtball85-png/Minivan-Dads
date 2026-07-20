@@ -93,3 +93,8 @@ Format per entry:
 - Rationale: The board reached rapid, near-unanimous convergence on filing the ITU trademark now, but the CEO explicitly kept this off the table this cycle. Filing timing is a CEO-only spend/legal call, and it stays deferred until the reopened naming research (including alternatives and live verification) is complete — filing before that risks locking in a name the CEO isn't yet committed to.
 - Decided by: CEO
 - Affected departments: market_intel, creative, product, finance
+
+## 2026-07-19 — Phase 3 opened: creative activated as the second live agent
+- Rationale: The CEO directed Creative's activation ahead of the roadmap's stated Phase 3 gates (Phase 2 exit test and hard shop-open date both still open) to get market-research and design-concept support now. Creative moves dormant -> active at Tier 1 (draft-only -- produces concepts, a human still publishes), with an initial mandate covering the design-concept backlog and the backup-handle brand-voice check that has been waiting on this activation since 2026-07-17.
+- Decided by: CEO
+- Affected departments: creative, market_intel
