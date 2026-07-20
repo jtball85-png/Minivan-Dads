@@ -23,6 +23,76 @@ Decisions that shaped the project — keep these forever.
 
 Most recent session at the top.
 
+## Session — 2026-07-19
+
+**Focus:** CEO console review build queue items #5 (cost visibility) and #6 (top commands as buttons), then Creative department activation, a garage/board operating model, and a full research-to-design pipeline, ending on reopening the brand-name decision.
+
+**Decisions made:**
+- Cost visibility (#5) built: per-call token/cost logging (`hq/actions/llm_usage.jsonl` via `hq.append_llm_usage`), `brain/pricing.py` rate table, `/api/costs` endpoint, `brain status` cost line, dashboard Cost card — cost tagged per command (ask/ingest/meeting/agent:dept/etc).
+- Top commands as buttons (#6) built: plain-English "Quick actions" row on the Dashboard tab, not raw command syntax.
+- Creative activated ahead of the Phase 2 exit gates on an explicit CEO decision (logged in `hq/decisions/log.md`, 2026-07-19): Tier 1, real directive written, first real weekly report produced (design-concept backlog, backup-handle brand-voice check citing market_intel's 2026-W29 Finding 6, ESC-008 raised).
+- `brain/prompts/agent_core.md`'s "stay in tier" line was Tier-0-only phrasing — fixed to be tier-aware so Creative (Tier 1) gets correct ground rules.
+- "Two rooms" operating model formalized in CLAUDE.md: Garage (CEO + Claude Code, ad hoc, ungoverned, not cost-tracked) vs. Dashboard/Board (charter/tier-governed departments, HQ-logged, cost-tracked). Rule: never call garage work "a loop" — collides with market_intel's GitHub Actions "loop".
+- Installed `.claude/skills/garage-research/SKILL.md` (multi-agent independent research with a garage-to-board handoff step via `hq.write_research_exhibit()`) and built `.claude/skills/garage-design/SKILL.md` (research to SVG draft to flat composite preview to CEO-review checkpoint, hard stop before "push live").
+- Real governed Printful connector (credentials, mockup generation, actual product creation) deliberately NOT built this session — stays a separate future decision; only garage-side drafting tooling was built.
+- SVG rasterization on Windows: `cairosvg` doesn't work (no native Cairo/GTK3 runtime) — switched to `svglib` + `reportlab` + `pycairo` + `rlPyCairo`, added as a `garage` optional-dependency extra in `pyproject.toml` (not a core `brain` dependency).
+- CEO supplied a real Printful product-template folder (`E:\Products\Printful Products`, ~773MB) — curated the t-shirt (Bella+Canvas 3001) and beanie subsets (~2.2MB) into `garage/design/printful-templates/`, excluding unrelated products and duplicates.
+- Product-lineup research flagged stickers as a strong margin candidate and beanie-vs-structured-dad-hat as an open question with a seasonal ceiling on beanies — CEO deferred the beanie question to its own conversation; t-shirt/mug design work directed to draw from the sayings + color-combo research, not the beanie research.
+- Brand-name reopening: TheMinivanDads.com, MinivanDadClub.com, and MinivanDadCrew.com all reconfirmed available (live RDAP checks); Etsy handle checks rate-limited (403, matches market_intel's own prior experience); Instagram/TikTok/X reconfirmed unverifiable via an independent method (WebFetch), consistent with the 2026-07-17 finding.
+- CEO pasted a live Gmail password for `theminivandads@gmail.com` in chat — declined to attempt password-based login (no capability for it, and it reads as credential-stuffing to Google's own security systems); confirmed via the existing Gmail MCP connector that the currently-authorized account is a different, personal account; explained the OAuth-connector path forward is something the CEO has to do outside chat. No Instagram integration exists at all.
+
+**Problems solved:**
+- Dashboard still showed Creative as dormant after activation — root cause: `Minivan Dads HQ.bat`'s "already running? just open browser" check meant the stale server process (holding pre-activation config) never restarted; fixed by killing the stale process and starting a fresh one.
+- A smoke-test run of `brain agent creative` accidentally overwrote the real first Creative report (same ISO week collision) — caught immediately, restored the original content verbatim, verified ESC-008 was untouched.
+- First round of "10 road-trip one-liners" was invented marketing copy presented as if researched — CEO rejected it directly ("yours were aweful. was that really based on research?"); redone as real sourced research, with the CEO's own remembered lines banked as-is and separate confidence tiers for verified vs. unverifiable material.
+- Printful's exact print-area dimensions require an API key (confirmed 401 without one) even though catalog browsing is free — `garage-design` built to prefer real local templates, then the API, then a labeled industry-standard approximation, in that order.
+- First flat-preview render of the "quiet game" t-shirt design looked too-small-text at first glance — checked the actual 300 DPI print export before assuming a resolution problem; the real issue was vertical centering, not size or DPI; fixed and re-rendered before presenting, with the remaining imperfection (hand-picked coordinates, not real font-metric centering) stated plainly rather than left as a hidden defect.
+
+**Approaches discussed:**
+- Skills vs. app code for garage tooling: skills for ungoverned/no-credential/no-external-write work (research, design drafting); real `brain/` code + the existing executor/capability-ladder framework for anything touching real external writes, credentials, or money.
+- "Garage narrows, board formalizes" as the standing pattern — messy/broad exploration happens in the garage first; only a narrowed, promoted exhibit goes to a department, and only when asked.
+- Full research-to-preview pipeline (research, product selection, design, template-fit, flat preview, CEO approval, "ready to push live") built through CEO-reviewable flat preview; explicitly and permanently stopped short of the real Printful connector.
+
+**Left unresolved:**
+- Brand name: not finally decided. TheMinivanDads, MinivanDadClub, MinivanDadCrew all have confirmed-available .com domains; Etsy/Instagram/TikTok/X handle availability remains genuinely unverifiable with current tooling; Gmail/Instagram manual checks are on the CEO.
+- Beanie vs. structured dad-hat product-lineup question — explicitly deferred to its own conversation.
+- Sticker product addition — flagged as a strong candidate by research, not yet decided.
+- Real Printful connector (credentials, mockup generation, actual product creation, "push live") — deliberately not built, remains a distinct future project.
+- `theminivandads@gmail.com` Gmail connector — not yet authorized via Claude's own OAuth connector settings; that step is on the CEO.
+- ESC-002, ESC-004, ESC-005, ESC-006, ESC-007, ESC-008 all still open; none ruled on at a board meeting this session.
+- Phase 2 exit test (directive change visibly changing the next report) and the hard shop-open date — still open, untouched this session.
+- T-shirt/mug design pass using the sayings + color-combo research — not completed; session moved to the brand-name conversation before it started.
+
+**Files changed this session:**
+23 files modified, 8 new untracked paths, none yet committed (nothing committed today until this end-of-day commit):
+```
+ .env.example                      |  4 +++
+ CLAUDE.md                         | 26 ++++++++++++++++++
+ brain/agent.py                    |  8 +++++-
+ brain/config.yaml                 |  4 +--
+ brain/dashboard/app.py            | 19 +++++++++++++
+ brain/dashboard/chat.py           | 30 +++++++++++++++------
+ brain/dashboard/static/app.js     | 57 +++++++++++++++++++++++++++++++++++++--
+ brain/dashboard/static/index.html |  5 ++++
+ brain/hq.py                       | 43 ++++++++++++++++++++++++++++-
+ brain/llm.py                      | 34 ++++++++++++++++++++++-
+ brain/main.py                     | 35 +++++++++++++++++++-----
+ brain/models.py                   | 38 ++++++++++++++++++++++++++
+ brain/prompts/agent_core.md       | 12 ++++++---
+ hq/decisions/log.md               |  5 ++++
+ hq/directives/creative.md         | 42 +++++++++++++++++++++--------
+ hq/escalations/queue.md           |  6 +++++
+ pyproject.toml                    | 10 +++++++
+ tests/test_agent.py               | 24 +++++++++++++++++
+ tests/test_chat.py                |  2 +-
+ tests/test_collaborate.py         |  2 +-
+ tests/test_commands.py            | 22 +++++++++++++--
+ tests/test_hq_directives.py       | 12 +++++----
+ tests/test_sync_and_discuss.py    |  4 +--
+ 23 files changed, 396 insertions(+), 48 deletions(-)
+```
+New untracked (not in the diff above): `.claude/skills/` (garage-research, garage-design), `brain/pricing.py`, `garage/` (research + design drafts, curated Printful templates, `compose_preview.py`), `hq/actions/` (llm_usage.jsonl, capabilities.yaml), `hq/reports/creative/2026-W29.md`, `tests/test_dashboard_costs.py`, `tests/test_hq_llm_usage.py`, `tests/test_hq_research_exhibits.py`, `tests/test_llm_usage_logging.py`, `tests/test_pricing.py`.
+
 ## Session — 2026-07-17
 
 **Focus:** First real board cycle in the dashboard (Friday), then hardening/UX from live use, live-check tools for agents, and a fresh-eyes CEO console review with the top 3 fixes built.
