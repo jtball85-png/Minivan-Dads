@@ -122,8 +122,16 @@ class PrintfulConnector:
 
     def execute(self, action_type: ActionType, params: dict) -> dict:
         # One or more print files per variant — e.g. front + sleeve_left. Each
-        # {placement, url} becomes a Printful file entry {type, url}.
-        files = [{"type": f["placement"], "url": f["url"]} for f in params["files"]]
+        # {placement, url, position?} becomes a Printful file entry. Without a
+        # position Printful prints the file at its NATIVE physical size (a
+        # too-small file then floats tiny in the print area) — so callers pass
+        # an explicit position to fill the print area deterministically.
+        files = []
+        for f in params["files"]:
+            entry = {"type": f["placement"], "url": f["url"]}
+            if f.get("position") is not None:
+                entry["position"] = f["position"]
+            files.append(entry)
         sync_variants = [
             {"variant_id": vid, "files": files}
             for vid in params["variant_ids"]

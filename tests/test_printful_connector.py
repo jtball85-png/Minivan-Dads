@@ -84,6 +84,24 @@ class TestExecuteAndRestore:
         }
         assert t.calls[0]["headers"]["Authorization"] == "Bearer k"
 
+    def test_execute_passes_file_position_when_given(self):
+        """Regression: without a position Printful prints the file at its native
+        size (a small file floats tiny in the print area). An explicit position
+        must reach the API body per file; files without one omit the key."""
+        t = FakeTransport()
+        t.set("POST", "/store/products", 200, {"result": {"id": 9}})
+        c = PrintfulConnector(api_key="k", transport=t)
+        pos = {"area_width": 1800, "area_height": 2400, "width": 1800,
+               "height": 2400, "top": 0, "left": 0}
+        c.execute(REGISTRY["printful.create_product"], {
+            "product_id": 71, "variant_ids": [1001],
+            "files": [{"placement": "front", "url": "https://host/f.png", "position": pos},
+                      {"placement": "sleeve_left", "url": "https://host/s.png"}],
+            "product_name": "n", "external_id": "e"})
+        files = t.calls[0]["body"]["sync_variants"][0]["files"]
+        assert files[0] == {"type": "front", "url": "https://host/f.png", "position": pos}
+        assert files[1] == {"type": "sleeve_left", "url": "https://host/s.png"}  # no position key
+
     def test_execute_without_key_raises(self):
         c = PrintfulConnector(api_key=None, transport=FakeTransport())
         with pytest.raises(PrintfulError, match="PRINTFUL_API_KEY required"):

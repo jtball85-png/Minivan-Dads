@@ -58,3 +58,9 @@ position in this file):
 - Raised by: executor/creative
 - Urgency: normal
 - Summary: printful.create_product rolled back (ACT-2026-W30-0002); capability demoted supervised -> dry_run. Raise at the next board meeting.
+
+## ESC-010
+- Raised: 2026-07-20
+- Raised by: executor/creative
+- Urgency: normal
+- Summary: printful.create_product rolled back (ACT-2026-W30-0004); capability demoted dry_run -> dry_run. Raise at the next board meeting.
