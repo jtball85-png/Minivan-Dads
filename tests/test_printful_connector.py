@@ -143,13 +143,12 @@ class TestStoreId:
             c.resolve_store_id()
 
 
+POS = {"area_width": 1800, "area_height": 2400, "width": 1800,
+       "height": 2400, "top": 0, "left": 0}
+
+
 class TestMockups:
     def test_polls_until_completed(self):
-        t = FakeTransport()
-        t.set("POST", "/mockup-generator/create-task/71", 200,
-              {"result": {"task_key": "abc"}})
-        # first poll pending, then completed — FakeTransport returns the last-set
-        # response, so simulate via a stateful sequence:
         seq = iter([
             (200, {"result": {"status": "pending"}}),
             (200, {"result": {"status": "completed",
@@ -157,12 +156,14 @@ class TestMockups:
         ])
 
         def transport(method, url, headers, body):
+            parsed = json.loads(body) if body else None
             if "create-task" in url:
+                assert parsed["files"][0]["position"] == POS
                 return 200, {"result": {"task_key": "abc"}}
             return next(seq)
 
         c = PrintfulConnector(api_key="k", transport=transport)
-        mockups = c.generate_mockups(71, [1001], "https://host/d.png",
+        mockups = c.generate_mockups(71, [1001], "https://host/d.png", position=POS,
                                      poll_seconds=0, sleep=lambda s: None)
         assert mockups == [{"mockup_url": "https://m/1.png"}]
 
@@ -174,7 +175,31 @@ class TestMockups:
 
         c = PrintfulConnector(api_key="k", transport=transport)
         with pytest.raises(PrintfulError, match="mockup task failed"):
-            c.generate_mockups(71, [1001], "u", poll_seconds=0, sleep=lambda s: None)
+            c.generate_mockups(71, [1001], "u", position=POS,
+                               poll_seconds=0, sleep=lambda s: None)
+
+    def test_auto_position_fetches_print_area(self):
+        """With no explicit position, the connector fetches the print-area
+        dims and fills them — matching a full-canvas design."""
+        printfiles = {"result": {
+            "variant_printfiles": [{"variant_id": 1, "placements": {"front": 1}}],
+            "printfiles": [{"printfile_id": 1, "width": 1800, "height": 2400}],
+        }}
+        captured = {}
+
+        def transport(method, url, headers, body):
+            parsed = json.loads(body) if body else None
+            if "printfiles" in url:
+                return 200, printfiles
+            if "create-task" in url:
+                captured["position"] = parsed["files"][0]["position"]
+                return 200, {"result": {"task_key": "k"}}
+            return 200, {"result": {"status": "completed", "mockups": []}}
+
+        c = PrintfulConnector(api_key="k", transport=transport)
+        c.generate_mockups(71, [1001], "u", poll_seconds=0, sleep=lambda s: None)
+        assert captured["position"] == {"area_width": 1800, "area_height": 2400,
+                                        "width": 1800, "height": 2400, "top": 0, "left": 0}
 
 
 class TestExecutorGovernanceRoundTrip:

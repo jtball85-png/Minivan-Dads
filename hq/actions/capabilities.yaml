@@ -1,0 +1,7 @@
+# MACHINE-OWNED — maintained by the executor. Promotions are board
+# decisions (each entry's note references one); demotions are automatic
+# after rollbacks. Human bounds live in brain/actions/limits.yaml.
+creative:
+  printful.create_product:
+    mode: supervised
+    note: CEO-approved first connector test, 2026-07-20

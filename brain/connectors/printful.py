@@ -145,18 +145,41 @@ class PrintfulConnector:
 
     # -- verification (free, non-mutating; not a governed write) ---------
 
+    def front_print_area(self, product_id: int, placement: str = "front") -> dict:
+        """The print-area dimensions for a placement (needed to position a
+        design in the mockup generator). Returns {'width','height',...}."""
+        data = self._call("GET", f"/mockup-generator/printfiles/{product_id}", auth=True)
+        result = data["result"]
+        # variant_printfiles maps placement -> printfile_id; look up its dims.
+        pf_id = result["variant_printfiles"][0]["placements"][placement]
+        for pf in result["printfiles"]:
+            if pf["printfile_id"] == pf_id:
+                return pf
+        raise PrintfulError(0, f"no printfile dims for placement {placement!r}")
+
     def generate_mockups(self, product_id: int, variant_ids: list[int],
                          image_url: str, placement: str = "front",
+                         position: dict | None = None,
                          poll_seconds: float = 2.0, max_polls: int = 40,
                          sleep: Callable[[float], None] = time.sleep) -> list[dict]:
         """Kick off Printful's async Mockup Generator and poll to completion.
         Returns the mockup entries (each with a real mockup_url) — the
         instrument for verifying the design renders correctly per colorway.
-        Non-mutating: makes preview images, changes nothing in the store."""
+        Non-mutating: makes preview images, changes nothing in the store.
+
+        `position` places the design in the print area; if omitted, the
+        design is fit to fill the full area (correct for a full-canvas
+        design like ours)."""
+        if position is None:
+            area = self.front_print_area(product_id, placement)
+            position = {"area_width": area["width"], "area_height": area["height"],
+                        "width": area["width"], "height": area["height"],
+                        "top": 0, "left": 0}
         task = self._call(
             "POST", f"/mockup-generator/create-task/{product_id}",
-            body={"variant_ids": variant_ids,
-                  "files": [{"placement": placement, "image_url": image_url}]},
+            body={"variant_ids": variant_ids, "format": "png",
+                  "files": [{"placement": placement, "image_url": image_url,
+                             "position": position}]},
             auth=True,
         )
         task_key = task["result"]["task_key"]
