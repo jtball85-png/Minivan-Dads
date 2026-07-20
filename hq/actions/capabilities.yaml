@@ -3,5 +3,5 @@
 # after rollbacks. Human bounds live in brain/actions/limits.yaml.
 creative:
   printful.create_product:
-    mode: supervised
-    note: CEO-approved first connector test, 2026-07-20
+    mode: dry_run
+    note: auto-demoted supervised -> dry_run after rollback of ACT-2026-W30-0002

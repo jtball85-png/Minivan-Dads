@@ -64,7 +64,7 @@ def main(print_file_url: str) -> None:
         agent="creative", action_type="printful.create_product",
         params={
             "product_id": PRODUCT_ID, "variant_ids": variant_ids,
-            "print_file_url": print_file_url, "placement": PLACEMENT,
+            "files": [{"placement": PLACEMENT, "url": print_file_url}],
             "product_name": PRODUCT_NAME, "external_id": EXTERNAL_ID,
         },
         rationale="First governed Printful connector test — CEO-approved, "

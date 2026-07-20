@@ -42,8 +42,8 @@ REGISTRY: dict[str, ActionType] = {
             params={
                 "product_id": "int",       # catalog product (e.g. 71 = Bella+Canvas 3001)
                 "variant_ids": "list",     # catalog variant ids (color×size)
-                "print_file_url": "str",   # public URL Printful fetches the design from
-                "placement": "str",        # e.g. "front"
+                "files": "list",           # [{"placement": "front", "url": <public URL>}, ...]
+                                           # one or more print files (e.g. front + sleeve_left)
                 "product_name": "str",
                 "external_id": "str",      # deterministic id for idempotency + rollback
             },

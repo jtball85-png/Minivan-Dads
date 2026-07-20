@@ -52,3 +52,9 @@ position in this file):
 - Raised by: creative
 - Urgency: normal
 - Summary: "Minivan Dads" as an exact phrase is already in commercial use on Amazon/Walmart/Zazzle (generic novelty tee, no logo/badge) — recommend the Class 25 trademark clearance search explicitly account for this prior commercial use before filing.
+
+## ESC-009
+- Raised: 2026-07-20
+- Raised by: executor/creative
+- Urgency: normal
+- Summary: printful.create_product rolled back (ACT-2026-W30-0002); capability demoted supervised -> dry_run. Raise at the next board meeting.

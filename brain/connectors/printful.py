@@ -121,9 +121,11 @@ class PrintfulConnector:
                 "note": "pre-create snapshot; rollback deletes @external_id"}
 
     def execute(self, action_type: ActionType, params: dict) -> dict:
+        # One or more print files per variant — e.g. front + sleeve_left. Each
+        # {placement, url} becomes a Printful file entry {type, url}.
+        files = [{"type": f["placement"], "url": f["url"]} for f in params["files"]]
         sync_variants = [
-            {"variant_id": vid,
-             "files": [{"type": params["placement"], "url": params["print_file_url"]}]}
+            {"variant_id": vid, "files": files}
             for vid in params["variant_ids"]
         ]
         body = {

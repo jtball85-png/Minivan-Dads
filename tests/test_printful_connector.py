@@ -64,7 +64,10 @@ class TestExecuteAndRestore:
         c = PrintfulConnector(api_key="k", transport=t)
         params = {
             "product_id": 71, "variant_ids": [1001, 2001, 3001],
-            "print_file_url": "https://host/design.png", "placement": "front",
+            "files": [
+                {"placement": "front", "url": "https://host/design.png"},
+                {"placement": "sleeve_left", "url": "https://host/sleeve.png"},
+            ],
             "product_name": "Quiet Game Tee", "external_id": "mvd-quiet-game",
         }
         result = c.execute(REGISTRY["printful.create_product"], params)
@@ -73,9 +76,11 @@ class TestExecuteAndRestore:
         body = t.calls[0]["body"]
         assert body["sync_product"]["external_id"] == "mvd-quiet-game"
         assert len(body["sync_variants"]) == 3
+        # each variant carries BOTH print files (front + sleeve)
         assert body["sync_variants"][0] == {
             "variant_id": 1001,
-            "files": [{"type": "front", "url": "https://host/design.png"}],
+            "files": [{"type": "front", "url": "https://host/design.png"},
+                      {"type": "sleeve_left", "url": "https://host/sleeve.png"}],
         }
         assert t.calls[0]["headers"]["Authorization"] == "Bearer k"
 
@@ -83,8 +88,9 @@ class TestExecuteAndRestore:
         c = PrintfulConnector(api_key=None, transport=FakeTransport())
         with pytest.raises(PrintfulError, match="PRINTFUL_API_KEY required"):
             c.execute(REGISTRY["printful.create_product"],
-                      {"product_id": 71, "variant_ids": [1], "print_file_url": "u",
-                       "placement": "front", "product_name": "n", "external_id": "e"})
+                      {"product_id": 71, "variant_ids": [1],
+                       "files": [{"placement": "front", "url": "u"}],
+                       "product_name": "n", "external_id": "e"})
 
     def test_read_state_captures_external_id_for_rollback(self):
         c = PrintfulConnector(api_key="k", transport=FakeTransport())
@@ -106,8 +112,9 @@ class TestExecuteAndRestore:
         c = PrintfulConnector(api_key="bad", transport=t)
         with pytest.raises(PrintfulError) as ei:
             c.execute(REGISTRY["printful.create_product"],
-                      {"product_id": 71, "variant_ids": [1], "print_file_url": "u",
-                       "placement": "front", "product_name": "n", "external_id": "e"})
+                      {"product_id": 71, "variant_ids": [1],
+                       "files": [{"placement": "front", "url": "u"}],
+                       "product_name": "n", "external_id": "e"})
         assert ei.value.status == 401
 
 
@@ -117,8 +124,9 @@ class TestStoreId:
         t.set("POST", "/store/products", 200, {"result": {"id": 1}})
         c = PrintfulConnector(api_key="k", store_id=12345, transport=t)
         c.execute(REGISTRY["printful.create_product"],
-                  {"product_id": 71, "variant_ids": [1], "print_file_url": "u",
-                   "placement": "front", "product_name": "n", "external_id": "e"})
+                  {"product_id": 71, "variant_ids": [1],
+                   "files": [{"placement": "front", "url": "u"}],
+                   "product_name": "n", "external_id": "e"})
         assert t.calls[0]["headers"]["X-PF-Store-Id"] == "12345"
 
     def test_resolve_single_store(self):
@@ -224,7 +232,8 @@ class TestExecutorGovernanceRoundTrip:
         return ActionIntent(
             agent="creative", action_type="printful.create_product",
             params={"product_id": 71, "variant_ids": [1001, 2001, 3001],
-                    "print_file_url": "https://host/design.png", "placement": "front",
+                    "files": [{"placement": "front", "url": "https://host/design.png"},
+                              {"placement": "sleeve_left", "url": "https://host/sleeve.png"}],
                     "product_name": "Quiet Game Tee", "external_id": "mvd-quiet-game"},
             rationale="first connector test", directive_version="2026-07-20",
         )
