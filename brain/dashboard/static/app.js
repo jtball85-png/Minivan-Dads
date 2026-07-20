@@ -21,6 +21,7 @@ const QUICK_CHIPS = {
   home:  [{ t: "#ingest" }, { t: "#meeting" }, { t: "#status" }],
   depts: [{ t: "@market_intel ", focus: true }, { t: "#agent market_intel" },
           { t: "#discuss market_intel" }, { t: "#collab market_intel, creative: ", focus: true }],
+  products: [{ t: "#agent storefront" }],
   board: [{ t: "#discuss market_intel" }, { t: "#ingest" }, { t: "#meeting" }],
   cmds:  [{ t: "#help" }],
 };
@@ -37,6 +38,33 @@ function renderQuickChips(tab) {
     };
     box.appendChild(b);
   });
+}
+
+/* ---------- products (read-only window on what the board manages) ---------- */
+async function loadProducts() {
+  const box = $("productList");
+  if (!box) return;
+  let data;
+  try { data = await (await fetch("/api/products")).json(); }
+  catch { box.innerHTML = `<p class="dim">Couldn't load products.</p>`; return; }
+  const products = data.products || [];
+  const synced = data.generated_at
+    ? `last synced ${esc(data.generated_at)}`
+    : `never synced — run <code>brain sync-products</code>`;
+  const head = `<p class="dim">${products.length} product(s) · ${synced}</p>`;
+  if (!products.length) {
+    box.innerHTML = head + `<p class="dim">No products yet.</p>`;
+    return;
+  }
+  box.innerHTML = head + products.map((p) => `
+    <div class="prod">
+      ${p.thumbnail_url ? `<img class="pthumb" src="${esc(p.thumbnail_url)}" alt="">` : `<div class="pthumb"></div>`}
+      <div class="pmeta">
+        <strong>${esc(p.title)}</strong>
+        <div class="dim">${esc(p.platform)} · ${esc(p.status)} · price ${esc(p.price_range)}</div>
+        <div class="dim">${esc((p.colorways || []).join(", "))}${p.sizes && p.sizes.length ? " · sizes " + esc(p.sizes.join("/")) : ""} · ${(p.variants || []).length} variants</div>
+      </div>
+    </div>`).join("");
 }
 
 /* ---------- "what needs me today" ---------- */
@@ -1105,6 +1133,7 @@ brCheckStatus();
 renderQuickChips("home");
 loadOverview();
 loadDepartments();
+loadProducts();
 loadBoardroom();
 loadCommands();
 loadQuickActions();

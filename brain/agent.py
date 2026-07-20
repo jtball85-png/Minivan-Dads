@@ -12,9 +12,11 @@ should need no changes for that.
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import date
 
+from brain.actions.models import ActionIntent
 from brain.config import BrainConfig
 from brain.hq import HQ
 from brain.llm import LLM
@@ -23,6 +25,14 @@ from brain.tools import TOOL_SCHEMAS, execute_tool
 
 ESCALATION_BLOCK_RE = re.compile(
     r"^### ESCALATION\s*\n- Urgency:\s*(urgent|normal)\s*\n- Summary:\s*(.+)$",
+    re.MULTILINE | re.IGNORECASE,
+)
+
+# A department authorized to make changes proposes them as ### ACTION blocks;
+# the run routes each through the Executor, which enforces all governance.
+# The agent never touches a platform directly — it proposes, the executor decides.
+ACTION_BLOCK_RE = re.compile(
+    r"^### ACTION\s*\n- Type:\s*([\w.]+)\s*\n- Params:\s*(\{.*?\})\s*\n- Rationale:\s*(.+)$",
     re.MULTILINE | re.IGNORECASE,
 )
 
@@ -35,10 +45,31 @@ def parse_escalations(report: str) -> list[tuple[str, str]]:
     ]
 
 
+def parse_actions(report: str) -> list[tuple[str, dict, str]]:
+    """[(action_type, params, rationale)] from the report's ### ACTION blocks.
+    Blocks whose Params aren't valid JSON are skipped (a malformed proposal
+    must not become a silent no-op that looks like it ran)."""
+    out: list[tuple[str, dict, str]] = []
+    for m in ACTION_BLOCK_RE.finditer(report):
+        try:
+            params = json.loads(m.group(2))
+        except json.JSONDecodeError:
+            continue
+        if isinstance(params, dict):
+            out.append((m.group(1).strip(), params, m.group(3).strip()))
+    return out
+
+
 def run_agent(dept: str, config: BrainConfig, hq: HQ, llm: LLM,
-              print_fn=print, exhibit: str = "", exhibit_label: str = "") -> int:
+              print_fn=print, exhibit: str = "", exhibit_label: str = "",
+              executor=None, product_catalog: str = "") -> int:
     """Execute one scheduled run for a department. Returns an exit code
-    (0 = ok / nothing to do, 1 = misconfigured)."""
+    (0 = ok / nothing to do, 1 = misconfigured).
+
+    A "doing" department (e.g. storefront) is given an `executor` and its
+    `product_catalog`: its report may include ### ACTION blocks, each routed
+    through the executor after the report is written. Reporter-only departments
+    pass neither and behave exactly as before."""
     dept_config = config.departments.get(dept)
     if dept_config is None:
         print_fn(f"Unknown department {dept!r}. Registered: {', '.join(config.departments)}")
@@ -63,6 +94,11 @@ def run_agent(dept: str, config: BrainConfig, hq: HQ, llm: LLM,
         dynamic_parts.append(f"### Your previous report ({last_week})\n\n{last_report}")
     else:
         dynamic_parts.append("### Your previous report\n\nNone — this is your first report.")
+    if product_catalog:
+        # Current live products, so a doing-department can assess and propose
+        # concrete edits instead of guessing. Read from the HQ snapshot, not
+        # a live API (looking is free).
+        dynamic_parts.append(f"### Current product catalog\n\n{product_catalog}")
     if exhibit:
         # A garage research finding handed to this run (CLAUDE.md's "Two
         # rooms" — the garage-to-board handoff point). One-time context,
@@ -114,5 +150,22 @@ def run_agent(dept: str, config: BrainConfig, hq: HQ, llm: LLM,
         print_fn(f"[{dept}] escalation filed: {escalation_id} ({urgency}) {summary}")
     if not escalations:
         print_fn(f"[{dept}] no escalations raised.")
+
+    # Proposed changes -> the executor, which enforces all governance (dry-run
+    # by default, price/brand escalate, snapshot + rollback, append-only log).
+    if executor is not None:
+        directive_version = ""
+        updated = hq.directive_updated_at(dept)
+        if updated is not None:
+            directive_version = updated.isoformat()
+        actions = parse_actions(report)
+        for action_type, params, rationale in actions:
+            record = executor.submit(ActionIntent(
+                agent=dept, action_type=action_type, params=params,
+                rationale=rationale, directive_version=directive_version,
+            ))
+            print_fn(f"[{dept}] action {action_type} -> {record.result} ({record.id})")
+        if not actions:
+            print_fn(f"[{dept}] no actions proposed.")
 
     return 0

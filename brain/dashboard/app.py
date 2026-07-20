@@ -221,6 +221,13 @@ def create_app(config: BrainConfig, hq: HQ) -> FastAPI:
             ],
         }
 
+    @app.get("/api/products")
+    def products():
+        """The unified product catalog, read-only from the last synced
+        snapshot — no live API call (looking is free). Refresh it with
+        `brain sync-products` or a storefront agent run."""
+        return hq.read_product_catalog()
+
     @app.get("/api/departments")
     def departments():
         return [

@@ -89,3 +89,24 @@ into the escalation queue):
 genuinely time-sensitive windows — per the charter, urgent means "surfaced
 loudly at the CEO's next command," so don't cry wolf. If nothing warrants
 escalation, write exactly "None." under this heading.
+
+## Proposed changes (ONLY if your directive authorizes actions)
+
+Most departments never write this section — omit it entirely unless your
+directive explicitly says you may propose changes. If it does, propose each
+concrete edit as an ### ACTION block (code parses these and routes each
+through the governed executor — you never touch a platform yourself; the
+executor decides what actually happens):
+
+### ACTION
+- Type: <registered action, e.g. printful.update_product>
+- Params: <one-line JSON object of the action's params>
+- Rationale: <why this change, in one line>
+
+What happens to a proposed action is not up to you: it is previewed
+(dry-run) until the capability is granted, and anything touching money
+(price) or brand identity is rejected and escalated to the CEO. So do NOT
+propose price changes as actions — put a price recommendation in an
+### ESCALATION instead. Propose only the edits your directive allows
+(descriptions, SEO/tags, product copy). If you have no changes to propose,
+omit this section.

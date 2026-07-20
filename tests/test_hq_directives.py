@@ -46,16 +46,17 @@ def test_config_loader_produces_all_eight_departments():
     config = load_config()
 
     assert len(config.departments) == 8
-    # Phase 2/3: market_intel and creative are live; everything else stays
-    # dormant until its phase (roadmap). Update this test at each
+    # Phase 2/3/4: market_intel, creative, and storefront are live; everything
+    # else stays dormant until its phase (roadmap). Update this test at each
     # activation — it's the tripwire against accidental activations.
-    active = {"market_intel", "creative"}
+    active = {"market_intel", "creative", "storefront"}
     assert all(config.departments[name].status == "active" for name in active)
     assert all(
         d.status == "dormant"
         for name, d in config.departments.items() if name not in active
     )
     assert config.departments["creative"].tier == 1
+    assert config.departments["storefront"].tier == 1  # Phase 4 doing-agent
     expected = {
         "market_intel", "creative", "content", "product",
         "storefront", "customer", "paid_ads", "finance",

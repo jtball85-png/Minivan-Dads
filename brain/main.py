@@ -338,18 +338,78 @@ def cmd_dashboard(hq: HQ, config: BrainConfig, host: str, port: int) -> None:
     uvicorn.run(app, host=host, port=port, log_level="warning")
 
 
-def cmd_rollback(hq: HQ, config: BrainConfig, action_id: str) -> None:
+PRODUCT_DEPARTMENTS = {"storefront", "product"}
+
+
+def build_connectors(env=None) -> dict:
+    """Live platform connectors from environment credentials. A missing
+    credential means the connector is simply absent — the executor then treats
+    its actions as 'no live connector' and escalates, never silently no-ops."""
+    import os as _os
+
+    env = env if env is not None else _os.environ
+    connectors: dict = {}
+    if env.get("PRINTFUL_API_KEY"):
+        from brain.connectors.printful import PrintfulConnector
+        store = env.get("PRINTFUL_STORE_ID")
+        connectors["printful"] = PrintfulConnector(
+            api_key=env["PRINTFUL_API_KEY"],
+            store_id=int(store) if store else None,
+        )
+    if env.get("ETSY_API_KEY") and env.get("ETSY_SHOP_ID"):
+        from brain.connectors.etsy import EtsyConnector
+        connectors["etsy"] = EtsyConnector(
+            api_key=env["ETSY_API_KEY"], shop_id=env["ETSY_SHOP_ID"])
+    return connectors
+
+
+def build_executor(hq: HQ, connectors: dict):
     from brain.actions.limits import load_capabilities, load_limits
     from brain.actions.registry import REGISTRY
     from brain.executor import Executor
 
-    executor = Executor(
-        hq=hq,
-        registry=REGISTRY,
-        limits=load_limits(registry=REGISTRY),
-        capabilities=load_capabilities(hq.root / "actions" / "capabilities.yaml"),
-        connectors={},  # no live connectors until Phase 2+
+    caps_path = hq.root / "actions" / "capabilities.yaml"
+    return Executor(
+        hq=hq, registry=REGISTRY, limits=load_limits(registry=REGISTRY),
+        capabilities=load_capabilities(caps_path), connectors=connectors,
+        capabilities_path=caps_path,
     )
+
+
+def sync_products(hq: HQ, connectors: dict) -> list[dict]:
+    """Pull every live product across connected platforms into one catalog and
+    persist the HQ snapshot. The ONE live API pull — everything else reads the
+    snapshot. Returns the product dicts written."""
+    from datetime import datetime
+
+    from brain.products import product_view_from_printful
+
+    products: list[dict] = []
+    printful = connectors.get("printful")
+    if printful is not None:
+        products += [product_view_from_printful(d).to_dict()
+                     for d in printful.list_products()]
+    etsy = connectors.get("etsy")
+    if etsy is not None and getattr(etsy, "connected", False):
+        pass  # Etsy listings fold in here once the connector is wired.
+    hq.write_product_catalog(datetime.now().isoformat(timespec="seconds"), products)
+    return products
+
+
+def cmd_sync_products(hq: HQ, config: BrainConfig) -> None:
+    connectors = build_connectors()
+    if "printful" not in connectors:
+        print("No PRINTFUL_API_KEY in the environment — nothing to sync.")
+        return
+    products = sync_products(hq, connectors)
+    print(f"Synced {len(products)} product(s) to hq/products/catalog.json:")
+    for p in products:
+        print(f"  {p['title']}  [{p['platform']}]  {p['price_range']}  "
+              f"{len(p['variants'])} variants")
+
+
+def cmd_rollback(hq: HQ, config: BrainConfig, action_id: str) -> None:
+    executor = build_executor(hq, build_connectors())
     try:
         record = executor.rollback(action_id)
     except ValueError as e:
@@ -443,6 +503,20 @@ def build_parser() -> argparse.ArgumentParser:
             "Requires this week's agenda — run `brain ingest` first."
         ),
         epilog="Example: brain meeting",
+    )
+
+    subparsers.add_parser(
+        "sync-products",
+        help="Refresh the live product-catalog snapshot from the stores",
+        formatter_class=fmt,
+        description=(
+            "Pulls every live product from the connected stores (Printful now;\n"
+            "Etsy once connected) and writes hq/products/catalog.json + .md — the\n"
+            "snapshot the dashboard and the storefront agent read. This is the one\n"
+            "live API pull; viewing the catalog afterward costs nothing.\n\n"
+            "Needs PRINTFUL_API_KEY in the environment (.env)."
+        ),
+        epilog="Example: brain sync-products",
     )
 
     directive_parser = subparsers.add_parser(
@@ -584,6 +658,8 @@ def cli() -> None:
         cmd_boardroom(hq, llm, config, args.topic,
                       all_departments=args.all_departments,
                       depts=args.depts)
+    elif args.command == "sync-products":
+        cmd_sync_products(hq, config)
     elif args.command == "rollback":
         cmd_rollback(hq, config, args.action_id)
     elif args.command == "dashboard":
@@ -600,8 +676,30 @@ def cli() -> None:
                 return
             exhibit_label = f"Garage research exhibit: {args.exhibit}"
         llm = LLM(config, hq, command=f"agent:{args.department}")
+
+        # Doing departments (those with allowed actions) get the executor so
+        # their proposed ### ACTION blocks are governed; product departments
+        # also get a freshly-synced catalog to assess.
+        from brain.actions.limits import load_limits
+        from brain.actions.registry import REGISTRY
+        limits = load_limits(registry=REGISTRY)
+        executor = None
+        product_catalog = ""
+        dept_limits = limits.get(args.department)
+        if dept_limits and dept_limits.allowed_actions:
+            connectors = build_connectors()
+            executor = build_executor(hq, connectors)
+            if args.department in PRODUCT_DEPARTMENTS:
+                try:
+                    sync_products(hq, connectors)
+                except Exception as e:  # a stale catalog beats aborting the run
+                    print(f"[{args.department}] product sync failed ({e}); "
+                          f"using last snapshot.")
+                product_catalog = hq.product_catalog_markdown()
+
         raise SystemExit(run_agent(args.department, config, hq, llm,
-                                   exhibit=exhibit, exhibit_label=exhibit_label))
+                                   exhibit=exhibit, exhibit_label=exhibit_label,
+                                   executor=executor, product_catalog=product_catalog))
 
 
 if __name__ == "__main__":

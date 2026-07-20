@@ -112,15 +112,62 @@ class PrintfulConnector:
         missing = [(c, s) for c in colors for s in sizes if (c, s) not in found]
         return {"variants": found, "missing": missing}
 
+    # -- store reads (authenticated) — for the unified catalog --------------
+
+    def list_products(self) -> list[dict]:
+        """Every sync product in the store, each fully expanded to
+        {'sync_product': ..., 'sync_variants': [...]} (the list endpoint omits
+        variants, so we fetch each product's detail). Read-only."""
+        listing = self._call("GET", "/store/products", auth=True)
+        details = []
+        for item in listing.get("result", []):
+            detail = self._call("GET", f"/store/products/{item['id']}", auth=True)
+            details.append(detail["result"])
+        return details
+
+    def get_product(self, external_id: str) -> dict:
+        """One sync product by external_id: {'sync_product', 'sync_variants'}."""
+        return self._call("GET", f"/store/products/@{external_id}", auth=True)["result"]
+
     # -- Connector protocol (executor-only: execute / read_state / restore)
 
     def read_state(self, action_type: ActionType, params: dict) -> dict:
-        # Pre-create there is nothing to capture except the external_id we're
-        # about to claim — that's what rollback needs.
-        return {"external_id": params["external_id"],
-                "note": "pre-create snapshot; rollback deletes @external_id"}
+        """Snapshot the pre-action state so restore() can undo. The shape
+        depends on the action: create captures just the external_id it will
+        claim; edits capture the current name / retail prices."""
+        if action_type.name == "printful.create_product":
+            # Pre-create there is nothing to capture except the external_id we're
+            # about to claim — that's what rollback needs.
+            return {"external_id": params["external_id"],
+                    "note": "pre-create snapshot; rollback deletes @external_id"}
+        ext = params["external_id"]
+        current = self.get_product(ext)
+        snap = {"external_id": ext, "name": current["sync_product"].get("name")}
+        snap["retail_prices"] = [
+            {"id": sv["id"], "retail_price": sv.get("retail_price")}
+            for sv in current.get("sync_variants", [])
+        ]
+        return snap
 
     def execute(self, action_type: ActionType, params: dict) -> dict:
+        if action_type.name == "printful.create_product":
+            return self._create_product(params)
+        if action_type.name == "printful.update_product":
+            self._call("PUT", f"/store/products/@{params['external_id']}",
+                       body={"sync_product": {"name": params["name"]}}, auth=True)
+            return {"external_id": params["external_id"], "updated": "name"}
+        if action_type.name == "printful.set_retail_price":
+            current = self.get_product(params["external_id"])
+            price = f"{float(params['retail_price']):.2f}"
+            sync_variants = [{"id": sv["id"], "retail_price": price}
+                             for sv in current.get("sync_variants", [])]
+            self._call("PUT", f"/store/products/@{params['external_id']}",
+                       body={"sync_variants": sync_variants}, auth=True)
+            return {"external_id": params["external_id"], "retail_price": price,
+                    "variants_priced": len(sync_variants)}
+        raise PrintfulError(0, f"unhandled action {action_type.name!r}")
+
+    def _create_product(self, params: dict) -> dict:
         # One or more print files per variant — e.g. front + sleeve_left. Each
         # {placement, url, position?} becomes a Printful file entry. Without a
         # position Printful prints the file at its NATIVE physical size (a
@@ -150,8 +197,20 @@ class PrintfulConnector:
 
     def restore(self, action_type: ActionType, snapshot: dict) -> dict:
         ext = snapshot["external_id"]
-        self._call("DELETE", f"/store/products/@{ext}", auth=True)
-        return {"deleted_external_id": ext}
+        if action_type.name == "printful.create_product":
+            self._call("DELETE", f"/store/products/@{ext}", auth=True)
+            return {"deleted_external_id": ext}
+        if action_type.name == "printful.update_product":
+            self._call("PUT", f"/store/products/@{ext}",
+                       body={"sync_product": {"name": snapshot.get("name")}}, auth=True)
+            return {"restored_external_id": ext, "restored": "name"}
+        if action_type.name == "printful.set_retail_price":
+            sync_variants = [{"id": r["id"], "retail_price": r["retail_price"]}
+                             for r in snapshot.get("retail_prices", [])]
+            self._call("PUT", f"/store/products/@{ext}",
+                       body={"sync_variants": sync_variants}, auth=True)
+            return {"restored_external_id": ext, "restored": "retail_prices"}
+        raise PrintfulError(0, f"unhandled restore for {action_type.name!r}")
 
     # -- verification (free, non-mutating; not a governed write) ---------
 

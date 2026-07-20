@@ -1,0 +1,149 @@
+{
+  "generated_at": "2026-07-20T15:49:55",
+  "products": [
+    {
+      "platform": "printful",
+      "product_id": "448525715",
+      "title": "Let's play the quiet game. \u2014 Tee",
+      "status": "synced",
+      "external_id": "mvd-quiet-game-tee",
+      "thumbnail_url": "https://files.cdn.printful.com/",
+      "url": null,
+      "colorways": [
+        "Black",
+        "Dark Grey Heather",
+        "Navy"
+      ],
+      "sizes": [
+        "2XL",
+        "L",
+        "M",
+        "S",
+        "XL"
+      ],
+      "price_range": "not set",
+      "variants": [
+        {
+          "color": "Black",
+          "size": "2XL",
+          "catalog_variant_id": 4020,
+          "sync_variant_id": 5403553731,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Black",
+          "size": "L",
+          "catalog_variant_id": 4018,
+          "sync_variant_id": 5403553739,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Black",
+          "size": "M",
+          "catalog_variant_id": 4017,
+          "sync_variant_id": 5403553741,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Black",
+          "size": "S",
+          "catalog_variant_id": 4016,
+          "sync_variant_id": 5403553742,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Black",
+          "size": "XL",
+          "catalog_variant_id": 4019,
+          "sync_variant_id": 5403553744,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Dark Grey Heather",
+          "size": "2XL",
+          "catalog_variant_id": 8464,
+          "sync_variant_id": 5403553745,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Dark Grey Heather",
+          "size": "L",
+          "catalog_variant_id": 8462,
+          "sync_variant_id": 5403553749,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Dark Grey Heather",
+          "size": "M",
+          "catalog_variant_id": 8461,
+          "sync_variant_id": 5403553754,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Dark Grey Heather",
+          "size": "S",
+          "catalog_variant_id": 8460,
+          "sync_variant_id": 5403553760,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Dark Grey Heather",
+          "size": "XL",
+          "catalog_variant_id": 8463,
+          "sync_variant_id": 5403553761,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Navy",
+          "size": "2XL",
+          "catalog_variant_id": 4115,
+          "sync_variant_id": 5403553764,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Navy",
+          "size": "L",
+          "catalog_variant_id": 4113,
+          "sync_variant_id": 5403553766,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Navy",
+          "size": "M",
+          "catalog_variant_id": 4112,
+          "sync_variant_id": 5403553767,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Navy",
+          "size": "S",
+          "catalog_variant_id": 4111,
+          "sync_variant_id": 5403553768,
+          "retail_price": null,
+          "base_cost": null
+        },
+        {
+          "color": "Navy",
+          "size": "XL",
+          "catalog_variant_id": 4114,
+          "sync_variant_id": 5403553772,
+          "retail_price": null,
+          "base_cost": null
+        }
+      ]
+    }
+  ]
+}

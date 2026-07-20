@@ -19,9 +19,20 @@ creative:
     max_actions_per_day: 5
 
 storefront:
-  allowed_actions: [shopify.update_listing_copy, shopify.update_listing_images]
+  # Storefront owns live-product upkeep: descriptions/SEO across Printful and
+  # Etsy. Copy edits are allowed (dry-run by default, earns supervised/auto).
+  # Every price action is deliberately ABSENT from allowed_actions, so any
+  # price change the agent proposes is rejected-and-escalated to the CEO —
+  # money never leaves the CEO's hands. The bounds below are belt-and-suspenders.
+  allowed_actions:
+    - shopify.update_listing_copy
+    - shopify.update_listing_images
+    - printful.update_product
+    - etsy.update_listing
   bounds:
-    shopify.set_price: { max_change_pct: 10, requires: escalation }   # not allowed yet
+    shopify.set_price: { max_change_pct: 10, requires: escalation }        # not allowed
+    printful.set_retail_price: { requires: escalation }                    # not allowed
+    etsy.set_price: { requires: escalation }                               # not allowed
     max_actions_per_day: 10
 
 paid_ads:

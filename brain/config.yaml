@@ -49,8 +49,8 @@ departments:
     status: dormant
     report_cadence: weekly
   - name: storefront
-    tier: 0
-    status: dormant
+    tier: 1
+    status: active   # activated 2026-07-20 (Phase 4 product-management, CEO-approved plan — see decision log)
     report_cadence: weekly
   - name: customer
     tier: 0

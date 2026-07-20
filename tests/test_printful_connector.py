@@ -136,6 +136,78 @@ class TestExecuteAndRestore:
         assert ei.value.status == 401
 
 
+class TestListProducts:
+    def test_expands_each_product_to_variants(self):
+        t = FakeTransport()
+        t.set("GET", "/store/products/555", 200, {"result": {
+            "sync_product": {"id": 555, "name": "Tee"},
+            "sync_variants": [{"id": 11, "variant_id": 4018, "name": "Tee / Black / M"}],
+        }})
+        t.set("GET", "/store/products", 200, {"result": [{"id": 555}]})
+        c = PrintfulConnector(api_key="k", transport=t)
+        details = c.list_products()
+        assert len(details) == 1
+        assert details[0]["sync_product"]["id"] == 555
+        assert details[0]["sync_variants"][0]["variant_id"] == 4018
+
+
+class TestUpdateActions:
+    CURRENT = {"result": {
+        "sync_product": {"id": 555, "external_id": "mvd-x", "name": "Old Name"},
+        "sync_variants": [{"id": 11, "retail_price": "24.00"},
+                          {"id": 12, "retail_price": "24.00"}],
+    }}
+
+    def test_update_product_puts_new_name(self):
+        t = FakeTransport()
+        t.set("PUT", "/store/products/@mvd-x", 200, {"result": {}})
+        c = PrintfulConnector(api_key="k", transport=t)
+        out = c.execute(REGISTRY["printful.update_product"],
+                        {"external_id": "mvd-x", "name": "New Name"})
+        assert out == {"external_id": "mvd-x", "updated": "name"}
+        assert t.calls[0]["method"] == "PUT"
+        assert t.calls[0]["body"] == {"sync_product": {"name": "New Name"}}
+
+    def test_read_state_snapshots_name_and_prices(self):
+        t = FakeTransport()
+        t.set("GET", "/store/products/@mvd-x", 200, self.CURRENT)
+        c = PrintfulConnector(api_key="k", transport=t)
+        snap = c.read_state(REGISTRY["printful.update_product"], {"external_id": "mvd-x"})
+        assert snap["name"] == "Old Name"
+        assert snap["retail_prices"] == [{"id": 11, "retail_price": "24.00"},
+                                         {"id": 12, "retail_price": "24.00"}]
+
+    def test_restore_update_product_reapplies_old_name(self):
+        t = FakeTransport()
+        t.set("PUT", "/store/products/@mvd-x", 200, {"result": {}})
+        c = PrintfulConnector(api_key="k", transport=t)
+        c.restore(REGISTRY["printful.update_product"],
+                  {"external_id": "mvd-x", "name": "Old Name"})
+        assert t.calls[0]["body"] == {"sync_product": {"name": "Old Name"}}
+
+    def test_set_retail_price_prices_every_variant(self):
+        t = FakeTransport()
+        t.set("GET", "/store/products/@mvd-x", 200, self.CURRENT)
+        t.set("PUT", "/store/products/@mvd-x", 200, {"result": {}})
+        c = PrintfulConnector(api_key="k", transport=t)
+        out = c.execute(REGISTRY["printful.set_retail_price"],
+                        {"external_id": "mvd-x", "retail_price": 28})
+        assert out["retail_price"] == "28.00"
+        assert out["variants_priced"] == 2
+        put = [call for call in t.calls if call["method"] == "PUT"][0]
+        assert put["body"] == {"sync_variants": [
+            {"id": 11, "retail_price": "28.00"}, {"id": 12, "retail_price": "28.00"}]}
+
+    def test_restore_set_retail_price_reapplies_old_prices(self):
+        t = FakeTransport()
+        t.set("PUT", "/store/products/@mvd-x", 200, {"result": {}})
+        c = PrintfulConnector(api_key="k", transport=t)
+        c.restore(REGISTRY["printful.set_retail_price"],
+                  {"external_id": "mvd-x",
+                   "retail_prices": [{"id": 11, "retail_price": "24.00"}]})
+        assert t.calls[0]["body"] == {"sync_variants": [{"id": 11, "retail_price": "24.00"}]}
+
+
 class TestStoreId:
     def test_store_id_sets_header_on_auth_calls(self):
         t = FakeTransport()

@@ -53,6 +53,36 @@ REGISTRY: dict[str, ActionType] = {
             snapshot_params=("external_id",),
         ),
         ActionType(
+            name="printful.update_product",
+            connector="printful",
+            # Copy-only edit (product name). Reversible: snapshot captures the
+            # current name, restore re-applies it. Price lives in its own
+            # action so money stays a separate, escalating decision.
+            params={"external_id": "str", "name": "str"},
+            snapshot_params=("external_id",),
+        ),
+        ActionType(
+            name="printful.set_retail_price",
+            connector="printful",
+            # Money. Not in any agent's allowed_actions -> always escalates to
+            # the CEO. Snapshot captures every variant's prior price for undo.
+            params={"external_id": "str", "retail_price": "float"},
+            snapshot_params=("external_id",),
+        ),
+        ActionType(
+            name="etsy.update_listing",
+            connector="etsy",
+            params={"listing_id": "str", "title": "str", "description": "str", "tags": "list"},
+            snapshot_params=("listing_id",),
+        ),
+        ActionType(
+            name="etsy.set_price",
+            connector="etsy",
+            # Money -> escalates, like printful.set_retail_price.
+            params={"listing_id": "str", "price": "float"},
+            snapshot_params=("listing_id",),
+        ),
+        ActionType(
             name="meta.adjust_budget",
             connector="meta_ads",
             params={"campaign_id": "str", "new_daily_budget": "float"},
