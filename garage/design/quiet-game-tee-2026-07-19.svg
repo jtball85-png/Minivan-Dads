@@ -11,10 +11,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
   <rect x="0" y="0" width="1200" height="1600" rx="24" fill="#111111"/>
 
-  <text x="600" y="745" text-anchor="middle"
+  <text x="600" y="751" text-anchor="middle"
         font-family="Georgia, 'Times New Roman', serif" font-weight="700"
         font-size="130" fill="#FFFFFF">Let's play</text>
-  <text x="600" y="895" text-anchor="middle"
+  <text x="600" y="901" text-anchor="middle"
         font-family="Georgia, 'Times New Roman', serif" font-weight="700"
         font-size="130" fill="#FFFFFF">the quiet game.</text>
 </svg>

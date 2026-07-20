@@ -1,6 +1,7 @@
 # Design draft: "Let's play the quiet game." — t-shirt
 
-status: draft — pending CEO review
+status: finalized — pending CEO review via real Printful mockups (governed
+connector build, 2026-07-20)
 
 ## Product selection (grounded in lineup research)
 
@@ -19,9 +20,25 @@ remembered lines). Used verbatim — no new copy written for this draft.
 
 ## Color
 
-Black background, white text — the #1 ranked shirt color combo from the
-color-combo research (matches the hat research's black-anchor finding
-too). Single-color print, no distressed treatment on this pass.
+White text on any dark garment. Confirmed to read cleanly on all three
+target colorways — **Black, Navy, and Heather grey** — with a single
+transparent print file (see the 3-up colorway check run 2026-07-20).
+Black is the #1 ranked shirt combo from the color-combo research; navy and
+heather are also cross-product anchors in that same research. Single-color
+print, no distressed treatment.
+
+## The upload file (transparent) vs. the preview swatch (black)
+
+`quiet-game-tee-2026-07-19-upload-300dpi.png` is the file that goes to
+Printful: **transparent background, white text only.** The black rectangle
+in the SVG / flat preview is a preview-only contrast swatch — it is NOT in
+the upload file. Printing a black box would waste ink on a black shirt and
+look broken on navy/heather; the transparent file prints only the white
+text, so one file serves all three dark colorways. (Note: the garage
+rasterizer fills white and can't emit transparency directly — the upload
+file is made by rendering white-on-solid-black and converting luminance to
+alpha. A reusable transparent-export helper for the garage-design tooling
+is a worthwhile follow-up, since every dark-garment design needs this.)
 
 ## Dimensions
 
@@ -49,18 +66,22 @@ black-shirt colorway *for contrast-checking within the print zone only*
 photorealistic mockup (no fabric drape, lighting, or product
 photography). That needs the real Printful connector, not yet built.
 
-## Revision history (caught on self-review, fixed before presenting — not left for CEO to catch)
+## Measured sizes (empirical, from the rendered 300 DPI file)
 
-- v1: text read small in the flat preview. Checked the actual 300 DPI
-  export before assuming that was a real problem — it wasn't a
-  resolution/legibility issue, the export was crisp. It *was* a real,
-  separate layout issue: the text block sat well above vertical center,
-  leaving a lopsided dead zone below it.
-- v2 (current): increased font size 110→130 and re-centered the text
-  block. Re-checked against the 300 DPI export — closer to centered,
-  genuinely improved, but **still not perfectly centered** — the
-  y-coordinates were hand-picked, not computed from actual font
-  ascent/descent metrics, so there's a small remaining offset (bottom
-  margin still a touch larger than top). Flagging honestly rather than
-  claiming this is fully resolved; a human eye (or a font-metrics-aware
-  pass) should make the final call before this goes further.
+- **Cap height ≈ 0.93 in** per line — roughly inch-tall caps, readable.
+- **Text block ≈ 2.43 in tall × 6.55 in wide**, inside the 12 × 16 in
+  front print area with comfortable margin.
+- **Vertical centering: exact (0 px offset)** — measured, not eyeballed.
+
+## Revision history (caught on self-review, fixed before presenting)
+
+- v1: text read small in the flat preview; the block sat above center.
+- v2 (07-19): font size 110→130, re-centered by hand — improved but the
+  y-coords were hand-picked, leaving a small residual offset, flagged
+  honestly.
+- **v3 (07-20, current): centering resolved empirically.** Rasterized the
+  SVG, measured the white-text bounding box in pixels, and shifted the
+  block by the measured +6 px so its ink-center sits exactly on canvas
+  center (re-measured offset = 0). Also produced the transparent upload
+  file and verified the design on all three colorways. The design is now
+  finalized; the remaining review is the CEO's, via real Printful mockups.
