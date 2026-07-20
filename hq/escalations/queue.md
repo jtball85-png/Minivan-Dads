@@ -64,3 +64,15 @@ position in this file):
 - Raised by: executor/creative
 - Urgency: normal
 - Summary: printful.create_product rolled back (ACT-2026-W30-0004); capability demoted dry_run -> dry_run. Raise at the next board meeting.
+
+## ESC-011
+- Raised: 2026-07-20
+- Raised by: storefront
+- Urgency: normal
+- Summary: No retail price is set on "Let's play the quiet game." Tee — recommend **$28** (mid-premium band). Landed cost ≈$17.70/unit (blank + DTG print + US shipping) nets ≈$10.30/unit (~37% margin), consistent with the charter's $27–29 premium-pricing pillar; CEO should confirm/adjust before this can go live to sell.
+
+## ESC-012
+- Raised: 2026-07-20
+- Raised by: executor/storefront
+- Urgency: normal
+- Summary: Action rejected: printful.update_product — missing params: name; unexpected params: description, tags. Agent rationale: Current listing relies on a generic saying already used verbatim by unrelated Amazon/TeePublic sellers; anchoring the description explicitly in the minivan-dad identity and adding dad/road-trip keywords differentiates the listing and improves discoverability without touching name, price, or brand identity.
