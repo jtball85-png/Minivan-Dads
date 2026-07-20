@@ -7,6 +7,32 @@ language, describe outcomes over implementations, and never require the
 terminal for company operations (the dashboard is the CEO's surface;
 `Minivan Dads HQ.bat` is the front door).
 
+## Two rooms: Garage vs. Dashboard
+
+Two distinct places work happens, and the CEO will often say which one they
+mean without naming it explicitly — infer from what's being asked:
+
+| | **Garage** | **Dashboard / Board** |
+|---|---|---|
+| Who | CEO + Claude Code | market_intel, creative, ... |
+| Governed by | Nothing formal | Charter, tiers, directives |
+| Output | Wherever we decide (chat, `garage/`) | `hq/reports/`, `hq/decisions/`, cost-logged |
+| Trigger | Slash commands, skills, direct ask | `#agent`, `#meeting`, `#boardroom` |
+
+**Default to the garage.** Escalate to the board only when the work needs
+to (a) persist as a department's ongoing memory, (b) carry the charter's
+brand-voice judgment *logged as the board's own*, or (c) become a decision
+that belongs in `hq/decisions/log.md`. A one-off "what's out there" look
+almost never needs the board — it's cheaper and faster in the garage, and
+nothing is lost since there's no continuity value to throw away on a first
+pass. See `.claude/skills/garage-research/SKILL.md` for the research
+workflow, including how a garage finding gets promoted to a board exhibit.
+
+**Never call garage work "a loop."** That word is already taken —
+market_intel's Thursday GitHub Actions run is "the loop" in this project's
+own history. A repeating garage task is a *garage loop*, said explicitly,
+never bare "a loop."
+
 ## Commands
 
 ```bash

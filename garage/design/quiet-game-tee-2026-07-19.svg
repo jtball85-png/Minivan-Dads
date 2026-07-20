@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Minivan Dads — garage design draft. 12in x 16in canvas at 100px/in,
+     matching the confirmed Printful front-print area (Bella+Canvas 3001).
+     Black background rect = the intended black-shirt colorway swatch for
+     THIS print zone (contrast-check only — the real garment is black
+     everywhere, not just here; this preview doesn't recolor the whole
+     shirt). White text per the shirt-color research's #1 ranked combo.
+     Copy is the verified line as-is from
+     dad-sayings-and-roadtrip-oneliners-2026-07-19.md — no new copy
+     written for this draft. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <rect x="0" y="0" width="1200" height="1600" rx="24" fill="#111111"/>
+
+  <text x="600" y="745" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif" font-weight="700"
+        font-size="130" fill="#FFFFFF">Let's play</text>
+  <text x="600" y="895" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif" font-weight="700"
+        font-size="130" fill="#FFFFFF">the quiet game.</text>
+</svg>

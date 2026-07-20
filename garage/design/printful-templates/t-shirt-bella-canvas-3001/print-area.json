@@ -1,0 +1,10 @@
+{
+  "x": 466,
+  "y": 1314,
+  "width": 188,
+  "height": 244,
+  "canvas_width": 1800,
+  "canvas_height": 2400,
+  "represents": "12in x 16in confirmed print area, front placement",
+  "note": "Visually estimated from 12x16.png's dashed guide box by Claude Code (view + eyeball the pixel bounds, then scale by the image's reported display-to-original ratio) -- not extracted programmatically, not pixel-perfect. Good enough for a flat placement/scale preview; refine by hand if a production-accurate composite is ever needed."
+}

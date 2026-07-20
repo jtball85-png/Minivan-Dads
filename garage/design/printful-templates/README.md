@@ -1,0 +1,56 @@
+# Real Printful templates (curated)
+
+Source: CEO's own `E:\Products\Printful Products` folder (real Printful
+downloads). That folder has 10 products (~773MB total) — mugs, tumblers,
+posters, water bottles, can coolers, a tank top, plus the two below.
+Only the two relevant to current hat/shirt/patch design work were copied
+in, and only the essential files from each — not the full folders, which
+also contained macOS extraction junk (`__MACOSX/`, `.DS_Store`),
+redundant `.zip` archives duplicating already-extracted folders, and
+(for the beanie) a ~30-image dump of per-colorway mockup photos and a
+finished third-party example design (`*Bodysurf Fin*`) that isn't a
+blank template.
+
+## What's here
+
+**`t-shirt-bella-canvas-3001/`** — Unisex Staple T-Shirt, Bella + Canvas
+3001 (the exact product Printful's own API returned when queried for a
+t-shirt — good independent confirmation this is the right reference).
+- `12x16.png` — flat template with the print-area guide drawn on it.
+- `12x16.psd` — same, as a layered Photoshop file.
+- **Confirmed real spec: 12" × 16" maximum front print area.** This
+  matches the industry-standard number `garage-design`'s skill file used
+  as a fallback — good, no correction needed there.
+
+**`embroidered-beanie/`** — Printful's Embroidered Beanie guidelines +
+blank templates.
+- `Embroidered_Beanie_Guidelines.pdf` — the real spec sheet.
+- `Embroidered_Beanie_Template.ai` / `.psd` — blank templates.
+- **Confirmed real spec: 5" × 1.75" front embroidery area** — narrower
+  and shorter than the `garage-design` skill's fallback guess for a
+  "structured/trucker cap front panel" (4.5"×2.5"). **Important
+  mismatch, not just a number update:** a beanie is a soft knit cap,
+  embroidery-only, no patch attachment — different construction from the
+  structured trucker-hat-with-leather-patch concept the hats/patches
+  research was built around. This folder has no trucker/structured cap
+  or leather-patch template. See the note in the chat for how this
+  changes the current design picks.
+- Also from the guidelines PDF — real embroidery constraints worth
+  applying to any beanie-targeted design, not just the print-area size:
+  - Max 6 solid colors per placement/type, no gradients/blends.
+  - 16-color fixed palette (exact hex values in the PDF) — anything
+    outside this list isn't embroiderable as specified.
+  - Flat embroidery: minimum detail thickness 0.05" (4pt); minimum
+    letter height 0.3" uppercase / 0.25" lowercase.
+  - 3D Puff embroidery: detail thickness 0.2"–0.5" (15–36pt).
+  - All fonts must be converted to outlines/shapes before export.
+
+## What was deliberately excluded
+
+The other 8 product folders in the source directory (mugs, tumblers,
+posters, water bottles, can cooler, tank top) — not relevant to current
+hat/shirt/patch work, ~700MB+ combined, would bloat the repo for no
+current use. Can be pulled in later, curated the same way, if/when a
+product line actually needs them. Also excluded from the two folders
+used: macOS junk, duplicate zips, per-colorway mockup photo dumps, and
+finished example designs (as opposed to blank templates).

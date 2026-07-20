@@ -17,6 +17,16 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "httpx"]
+# Garage-only tooling (the garage-design skill's flat-preview compositing
+# step) — not a brain/ app dependency, never imported by anything under
+# brain/. Install with: pip install -e ".[garage]"
+# svglib+reportlab rasterize the SVG; pycairo/rlPyCairo is reportlab's
+# renderPM backend (its default "pil" backend was dropped in reportlab
+# 4+). cairosvg was tried first — its cairocffi dependency needs a
+# system Cairo install that doesn't exist on Windows without a separate
+# GTK3 runtime installer; this stack avoids that entirely via pycairo's
+# self-contained Windows wheel.
+garage = ["svglib", "reportlab", "pycairo", "rlPyCairo", "Pillow"]
 
 [project.scripts]
 brain = "brain.main:cli"
