@@ -1,5 +1,5 @@
 # Project Memory
-Last updated: 2026-07-17 (end of day)
+Last updated: 2026-07-20 (end of day)
 
 This file captures decisions, reasoning, and session context that
 project-context.md doesn't hold. It is Claude's memory between sessions.
@@ -22,6 +22,62 @@ Decisions that shaped the project — keep these forever.
 ## Sessions
 
 Most recent session at the top.
+
+## Session — 2026-07-20
+
+**Focus:** Automating design→product — build the governed Printful connector (via plan mode) to turn approved designs into real products, then reframe into board-run product management across Printful/Etsy.
+
+**Decisions made:**
+- Built the first real connector `brain/connectors/printful.py` (account-level token auth via X-PF-Store-Id + store auto-resolve; catalog reads; governed `printful.create_product` through the executor; async mockup generation). Rollback uses a deterministic Printful `external_id` snapshotted pre-create, so a create is undone by `DELETE @external_id` without the executor needing the new product id.
+- Live-built the real product: "Let's play the quiet game." tee — serif front + "THE MINIVAN DADS" left sleeve, 3 dark colorways (Black/Navy/Dark Grey Heather), S–2XL, 15 variants, unpublished, zero spend. Old test product cleaned up via governed rollback (rollback rehearsed live; capability auto-demoted supervised→dry_run as designed).
+- Font/wordmark: CEO chose the SERIF (Georgia) look for the sayings over the researched bold-sans (Oswald/Bebas/Anton) — taste won over the research recommendation; sleeve wordmark = "THE MINIVAN DADS" (two words), not the run-together handle.
+- File hosting: Printful fetches the design from a public URL at creation time; used litterbox/catbox (auto-expiring) since the repo is private — creation-time fetch only, so expiry is fine.
+- Pipeline documented as a repeatable playbook (`docs/design-to-store-pipeline.md`): research→design→product→listing→publish→fulfill→learn, the 4 CEO-only walls (money/brand/legal/publish), and the API-access model (never browser login; access only via APIs the CEO authorizes).
+- OWNERSHIP REFRAME (CEO correction): CEO does NOT want a console to operate products by hand — the BOARD (storefront agent) runs product upkeep and pulls the CEO in only at the walls or on request. Rebuilt the plan around this.
+- Built board-run product management: unified `ProductView` model (`brain/products.py`, Printful now + Etsy-ready), catalog snapshot (`hq/products/catalog.json`+`.md`, read by dashboard/agents — "looking is free", no live API on view), governed edit actions (printful.update_product/set_retail_price, etsy.update_listing/set_price), storefront activated Tier 1 as a *doing* agent. `run_agent` now parses `### ACTION` blocks and routes them through the executor — copy edits preview (dry-run) until granted; price/brand always escalate. New `brain sync-products` command + read-only dashboard Products tab.
+- Etsy built ready-but-NOT-wired (connector inert until a shop is connected); order/delivery tracking kept a SEPARATE follow-on (both CEO decisions in plan mode).
+- Storefront's first live run: escalated a **$28** retail-price recommendation (~37% margin over ~$17.70 landed cost, within charter's $27–29 band); flagged "quiet game" as a saturated generic saying already sold verbatim elsewhere (NO trademark collision found) needing a hard minivan-dad differentiation angle; drafted a strong on-brand description + 7 SEO tags.
+
+**Problems solved:**
+- Tiny-print bug (CEO caught it): the real product printed the design ~4in, floating in the 12×16 area. Root cause: the serif front file was rendered at 1200×1600 @300dpi (=4×5.3in native) AND create sent no `position`. Fix: re-render at 3600×4800 (12×16in @300) AND send explicit fill positions per file. Lesson: verify against Printful's OWN stored placement preview, not the mockup generator (the generator independently scales to fill, which masked the bug).
+- create_product only took one print file → extended to a `files` list so one product carries front + sleeve.
+- Storefront's description/tags action was correctly REJECTED — a Printful product holds only a *name*; descriptions/tags live on the Etsy listing (not connected). Governance caught the shape mismatch; tuned the storefront directive so the agent parks copy as "Draft listing copy (ready for Etsy)" instead of proposing a doomed action (prompt-file fix, the standard fix).
+- Invalid ANTHROPIC_API_KEY (401) blocked the first agent run — env issue: a second key made on the CEO's laptop disabled the original. CEO re-enabled the original; verified live with a 1-token call.
+
+**Approaches discussed:**
+- Etsy architecture: Printful's native Etsy integration auto-fulfills Etsy orders and pushes tracking, so order tracking can read Printful orders (no separate Etsy API needed just for fulfillment). CEO opens the shop + connects to Printful (browser OAuth on their side); the machine never logs into Etsy's website.
+- Governance granularity: copy edits allowed (dry-run default, earn supervised/auto) vs. price ABSENT from allowed_actions → always rejected+escalated — mirrors the shopify copy/set_price pattern. Price/brand never earn autonomy.
+
+**Left unresolved:**
+- Etsy shop doesn't exist yet — CEO's step zero (open shop + connect to Printful) gates going live; the drafted description/SEO and the Etsy connector wait on it.
+- $28 retail-price recommendation is escalated, awaiting CEO approval — until a price is set, the tee cannot sell.
+- API-key hygiene needs a revisit (multiple Anthropic keys across the CEO's machines) — saved as a standing memory.
+- Brand name (from prior sessions) still not finally decided.
+
+**Files changed this session:**
+```
+ brain/actions/limits.yaml                   |  25 +-
+ brain/actions/registry.py                   |  43 +++-
+ brain/agent.py                              |  57 ++++-
+ brain/config.yaml                           |   4 +-
+ brain/connectors/etsy.py                    |  64 +++++
+ brain/connectors/printful.py                | 263 +++++++++++++++++++++
+ brain/dashboard/app.py                      |   7 +
+ brain/dashboard/static/{app.js,index.html,style.css} | 43 +
+ brain/hq.py                                 |  45 ++++
+ brain/main.py                               | 114 ++++++++-
+ brain/products.py                           | 147 ++++++++++++
+ brain/prompts/agent_core.md                 |  21 ++
+ docs/design-to-store-pipeline.md            | 125 ++++++++++
+ garage/design/create_printful_product.py    | 112 +++++++++
+ hq/directives/storefront.md                 |  66 +++++-
+ hq/products/catalog.{json,md} + reports/storefront/2026-W30.md + actions/escalations trail
+ tests/test_printful_connector.py            | 353 ++++++++++++++++++++++++++++
+ tests/test_products.py                      | 111 +++++++++
+ tests/test_storefront_agent.py              | 117 +++++++++
+ tests/{test_hq_directives,test_limits}.py   |  11 +-
+ 33 files changed, 1947 insertions(+), 30 deletions(-)  (302 tests passing)
+```
 
 ## Session — 2026-07-19
 
