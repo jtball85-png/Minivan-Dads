@@ -39,7 +39,18 @@ REGISTRY: dict[str, ActionType] = {
         ActionType(
             name="printful.create_product",
             connector="printful",
-            params={"template": "str", "variants": "list"},
+            params={
+                "product_id": "int",       # catalog product (e.g. 71 = Bella+Canvas 3001)
+                "variant_ids": "list",     # catalog variant ids (color×size)
+                "print_file_url": "str",   # public URL Printful fetches the design from
+                "placement": "str",        # e.g. "front"
+                "product_name": "str",
+                "external_id": "str",      # deterministic id for idempotency + rollback
+            },
+            # Snapshotting the external_id is what makes rollback possible:
+            # restore() deletes @external_id (create can't know its own new
+            # product id at pre-execute snapshot time).
+            snapshot_params=("external_id",),
         ),
         ActionType(
             name="meta.adjust_budget",

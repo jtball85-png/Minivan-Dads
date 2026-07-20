@@ -8,6 +8,16 @@
 # Seeded from the action-layer spec §4. All agents are dormant in Phase 1 —
 # nothing here is live until its phase and its capability ladder say so.
 
+creative:
+  # Creative owns designs and, by extension, their Printful product form.
+  # Product creation places no order and no money; it's an unpublished,
+  # deletable sync product. Still governed: capability ladder defaults to
+  # dry-run, CEO approves each live run for now. (Attribution for the first
+  # connector test; a dedicated product/storefront owner is a later org call.)
+  allowed_actions: [printful.create_product]
+  bounds:
+    max_actions_per_day: 5
+
 storefront:
   allowed_actions: [shopify.update_listing_copy, shopify.update_listing_images]
   bounds:

@@ -16,7 +16,9 @@ from brain.actions.registry import REGISTRY
 
 def test_shipped_limits_yaml_loads_against_real_registry():
     limits = load_limits(registry=REGISTRY)
-    assert set(limits) == {"storefront", "paid_ads", "content"}
+    assert set(limits) == {"creative", "storefront", "paid_ads", "content"}
+    assert limits["creative"].allowed_actions == ["printful.create_product"]
+    assert limits["creative"].daily_action_cap == 5
     assert limits["storefront"].daily_action_cap == 10
     assert limits["storefront"].action_bounds["shopify.set_price"]["requires"] == "escalation"
     assert limits["paid_ads"].action_bounds["meta.adjust_budget"]["weekly_total_cap_usd"] == 50

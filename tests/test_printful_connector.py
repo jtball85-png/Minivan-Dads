@@ -1,0 +1,197 @@
+"""Printful connector tests — a fake transport, never hits the network.
+Includes a full governance round-trip through the real Executor:
+dry-run -> supervised create -> rollback (delete)."""
+
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from brain.actions.models import ActionIntent, ActionMode
+from brain.actions.registry import REGISTRY
+from brain.connectors.printful import PrintfulConnector, PrintfulError
+from brain.executor import Executor
+from brain.models import DepartmentConfig
+
+
+class FakeTransport:
+    """Records calls; returns canned (status, json) per (method, path-prefix)."""
+
+    def __init__(self):
+        self.calls = []
+        self.responses = {}   # (method, path_contains) -> (status, json)
+
+    def set(self, method, path_contains, status, body):
+        self.responses[(method, path_contains)] = (status, body)
+
+    def __call__(self, method, url, headers, body_bytes):
+        parsed_body = json.loads(body_bytes) if body_bytes else None
+        self.calls.append({"method": method, "url": url, "headers": headers, "body": parsed_body})
+        for (m, frag), resp in self.responses.items():
+            if m == method and frag in url:
+                return resp
+        return 200, {"result": {}}
+
+
+CATALOG_71 = {"result": {"variants": [
+    {"id": 1001, "color": "Black", "size": "S"},
+    {"id": 1002, "color": "Black", "size": "M"},
+    {"id": 2001, "color": "Navy", "size": "S"},
+    {"id": 3001, "color": "Dark Grey Heather", "size": "S"},
+    {"id": 9999, "color": "Red", "size": "S"},
+]}}
+
+
+class TestCatalogLookup:
+    def test_filters_by_color_and_size_and_reports_missing(self):
+        t = FakeTransport()
+        t.set("GET", "/products/71", 200, CATALOG_71)
+        c = PrintfulConnector(transport=t)
+        out = c.list_catalog_variant_ids(71, ["Black", "Navy"], ["S", "M"])
+        assert out["variants"][("Black", "S")] == 1001
+        assert out["variants"][("Black", "M")] == 1002
+        assert out["variants"][("Navy", "S")] == 2001
+        assert ("Navy", "M") in out["missing"]   # Navy/M not in catalog
+        # catalog read is unauthenticated — no Authorization header
+        assert "Authorization" not in t.calls[0]["headers"]
+
+
+class TestExecuteAndRestore:
+    def test_execute_builds_sync_product_body_and_needs_auth(self):
+        t = FakeTransport()
+        t.set("POST", "/store/products", 200, {"result": {"id": 555}})
+        c = PrintfulConnector(api_key="k", transport=t)
+        params = {
+            "product_id": 71, "variant_ids": [1001, 2001, 3001],
+            "print_file_url": "https://host/design.png", "placement": "front",
+            "product_name": "Quiet Game Tee", "external_id": "mvd-quiet-game",
+        }
+        result = c.execute(REGISTRY["printful.create_product"], params)
+        assert result["printful_id"] == 555
+        assert result["variants_created"] == 3
+        body = t.calls[0]["body"]
+        assert body["sync_product"]["external_id"] == "mvd-quiet-game"
+        assert len(body["sync_variants"]) == 3
+        assert body["sync_variants"][0] == {
+            "variant_id": 1001,
+            "files": [{"type": "front", "url": "https://host/design.png"}],
+        }
+        assert t.calls[0]["headers"]["Authorization"] == "Bearer k"
+
+    def test_execute_without_key_raises(self):
+        c = PrintfulConnector(api_key=None, transport=FakeTransport())
+        with pytest.raises(PrintfulError, match="PRINTFUL_API_KEY required"):
+            c.execute(REGISTRY["printful.create_product"],
+                      {"product_id": 71, "variant_ids": [1], "print_file_url": "u",
+                       "placement": "front", "product_name": "n", "external_id": "e"})
+
+    def test_read_state_captures_external_id_for_rollback(self):
+        c = PrintfulConnector(api_key="k", transport=FakeTransport())
+        snap = c.read_state(REGISTRY["printful.create_product"], {"external_id": "mvd-x"})
+        assert snap["external_id"] == "mvd-x"
+
+    def test_restore_deletes_by_external_id(self):
+        t = FakeTransport()
+        t.set("DELETE", "/store/products/@mvd-x", 200, {"result": {}})
+        c = PrintfulConnector(api_key="k", transport=t)
+        out = c.restore(REGISTRY["printful.create_product"], {"external_id": "mvd-x"})
+        assert out["deleted_external_id"] == "mvd-x"
+        assert t.calls[0]["method"] == "DELETE"
+        assert "@mvd-x" in t.calls[0]["url"]
+
+    def test_http_error_raises_printful_error(self):
+        t = FakeTransport()
+        t.set("POST", "/store/products", 401, {"error": {"message": "unauthorized"}})
+        c = PrintfulConnector(api_key="bad", transport=t)
+        with pytest.raises(PrintfulError) as ei:
+            c.execute(REGISTRY["printful.create_product"],
+                      {"product_id": 71, "variant_ids": [1], "print_file_url": "u",
+                       "placement": "front", "product_name": "n", "external_id": "e"})
+        assert ei.value.status == 401
+
+
+class TestMockups:
+    def test_polls_until_completed(self):
+        t = FakeTransport()
+        t.set("POST", "/mockup-generator/create-task/71", 200,
+              {"result": {"task_key": "abc"}})
+        # first poll pending, then completed — FakeTransport returns the last-set
+        # response, so simulate via a stateful sequence:
+        seq = iter([
+            (200, {"result": {"status": "pending"}}),
+            (200, {"result": {"status": "completed",
+                              "mockups": [{"mockup_url": "https://m/1.png"}]}}),
+        ])
+
+        def transport(method, url, headers, body):
+            if "create-task" in url:
+                return 200, {"result": {"task_key": "abc"}}
+            return next(seq)
+
+        c = PrintfulConnector(api_key="k", transport=transport)
+        mockups = c.generate_mockups(71, [1001], "https://host/d.png",
+                                     poll_seconds=0, sleep=lambda s: None)
+        assert mockups == [{"mockup_url": "https://m/1.png"}]
+
+    def test_failed_task_raises(self):
+        def transport(method, url, headers, body):
+            if "create-task" in url:
+                return 200, {"result": {"task_key": "abc"}}
+            return 200, {"result": {"status": "failed"}}
+
+        c = PrintfulConnector(api_key="k", transport=transport)
+        with pytest.raises(PrintfulError, match="mockup task failed"):
+            c.generate_mockups(71, [1001], "u", poll_seconds=0, sleep=lambda s: None)
+
+
+class TestExecutorGovernanceRoundTrip:
+    """The real Executor + PrintfulConnector(fake transport): the full
+    governed path — dry-run by default, supervised creates, rollback deletes."""
+
+    def _harness(self, tmp_hq_root, config, hq, transport):
+        config.departments["creative"] = DepartmentConfig(
+            name="creative", tier=1, status="active", report_cadence="weekly")
+        from brain.actions.limits import AgentLimits
+        limits = {"creative": AgentLimits(allowed_actions=["printful.create_product"])}
+        connector = PrintfulConnector(api_key="k", transport=transport)
+        ex = Executor(
+            hq=hq, registry=REGISTRY, limits=limits,
+            capabilities={}, connectors={"printful": connector},
+            capabilities_path=tmp_hq_root / "actions" / "capabilities.yaml",
+            env={},
+        )
+        return ex
+
+    def _intent(self):
+        return ActionIntent(
+            agent="creative", action_type="printful.create_product",
+            params={"product_id": 71, "variant_ids": [1001, 2001, 3001],
+                    "print_file_url": "https://host/design.png", "placement": "front",
+                    "product_name": "Quiet Game Tee", "external_id": "mvd-quiet-game"},
+            rationale="first connector test", directive_version="2026-07-20",
+        )
+
+    def test_default_dry_run_touches_no_network(self, tmp_hq_root, config, hq):
+        t = FakeTransport()
+        ex = self._harness(tmp_hq_root, config, hq, t)
+        record = ex.submit(self._intent())
+        assert record.result == "dry_run"
+        assert t.calls == []   # dry-run never touches Printful
+
+    def test_supervised_creates_then_rollback_deletes(self, tmp_hq_root, config, hq):
+        t = FakeTransport()
+        t.set("POST", "/store/products", 200, {"result": {"id": 555}})
+        t.set("DELETE", "/store/products/@mvd-quiet-game", 200, {"result": {}})
+        ex = self._harness(tmp_hq_root, config, hq, t)
+        ex.capabilities["creative"] = {"printful.create_product": ActionMode.SUPERVISED}
+
+        record = ex.submit(self._intent())
+        assert record.result == "executed"
+        assert any(c["method"] == "POST" and "/store/products" in c["url"] for c in t.calls)
+        # snapshot captured the external_id
+        assert hq.read_snapshot(record.id)["external_id"] == "mvd-quiet-game"
+
+        rolled = ex.rollback(record.id)
+        assert rolled.result == "rolled_back"
+        assert any(c["method"] == "DELETE" and "@mvd-quiet-game" in c["url"] for c in t.calls)
