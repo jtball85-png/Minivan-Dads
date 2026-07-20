@@ -100,7 +100,7 @@ def make_client(env, responses):
     config, hq = env
     llm = DashFakeLLM(responses=responses)
     app = create_app(config, hq)
-    register_chat_routes(app, config, hq, make_llm=lambda: llm)
+    register_chat_routes(app, config, hq, make_llm=lambda command=None: llm)
     return TestClient(app), llm
 
 
@@ -244,6 +244,24 @@ class TestAgentCommand:
         assert any("dormant" in e.get("line", "") for e in events)
         assert events[-1]["exit_code"] == 0
 
+    def test_unknown_exhibit_slug_is_404(self, env):
+        client, _ = make_client(env, [])
+        response = client.post("/api/command/agent",
+                               json={"department": "market_intel", "exhibit": "nope"})
+        assert response.status_code == 404
+
+    def test_exhibit_reaches_the_run(self, env, hq):
+        hq.write_research_exhibit("dad-hats", "Olive/navy trucker hats trend across dad brands.")
+        report = "# Report\n\n## Findings\n\n1. x\n\n## Changes since last report\n\nFirst.\n\n## Escalations\n\nNone.\n"
+        client, llm = make_client(env, [report])
+        response = client.post("/api/command/agent",
+                               json={"department": "market_intel", "exhibit": "dad-hats"})
+        events = parse_sse(response.text)
+        assert events[-1] == {"done": True, "exit_code": 0}
+        dynamic = llm.calls[0].system_blocks[1]["text"]
+        assert "Olive/navy trucker hats trend across dad brands." in dynamic
+        assert "dad-hats" in dynamic
+
 
 class TestStreamErrorGuard:
     def test_api_failure_mid_stream_surfaces_as_error_event(self, env):
@@ -257,7 +275,7 @@ class TestStreamErrorGuard:
         config, hq = env
         llm = ExplodingLLM()
         app = create_app(config, hq)
-        register_chat_routes(app, config, hq, make_llm=lambda: llm)
+        register_chat_routes(app, config, hq, make_llm=lambda command=None: llm)
         client = TestClient(app)
 
         response = client.post("/api/command/ingest")

@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 
 from brain.config import BrainConfig
 from brain.hq import HQ
+from brain.pricing import summarize_usage
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -201,6 +202,24 @@ def create_app(config: BrainConfig, hq: HQ) -> FastAPI:
 
         items.sort(key=lambda x: x["priority"])
         return {"items": items, "all_clear": not items}
+
+    @app.get("/api/costs")
+    def costs():
+        """Cost visibility, read-only: this week's burn plus a typical
+        cost per action, computed from actual logged usage (never a
+        model call itself — 'looking is free')."""
+        week_start = date.fromisocalendar(*date.today().isocalendar()[:2], 1)
+        this_week = summarize_usage(hq.read_llm_usage(since=week_start))
+        all_time = summarize_usage(hq.read_llm_usage())
+        return {
+            "week_start": week_start.isoformat(),
+            "this_week": this_week,
+            "all_time_cost": all_time["total_cost"],
+            "typical_by_command": [
+                {**entry, "avg_cost": entry["cost"] / entry["calls"]}
+                for entry in all_time["by_command"]
+            ],
+        }
 
     @app.get("/api/departments")
     def departments():

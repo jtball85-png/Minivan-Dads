@@ -82,6 +82,57 @@ async function loadAttention() {
   });
 }
 
+/* ---------- quick actions (plain-English buttons, always visible) ---------- */
+async function loadQuickActions() {
+  const box = $("quickActions");
+  let depts = [];
+  try { depts = await (await fetch("/api/departments")).json(); }
+  catch { /* best-effort — the static actions below still work */ }
+
+  const actions = [
+    { label: "Build this week's agenda", cmd: "#ingest" },
+    { label: "Hold the board meeting", cmd: "#meeting" },
+    { label: "Refresh company status", cmd: "#status" },
+    ...depts.filter((d) => d.status === "active")
+      .map((d) => ({ label: `Run ${d.name} now`, cmd: `#agent ${d.name}` })),
+  ];
+
+  box.innerHTML = "";
+  actions.forEach((a, i) => {
+    const b = document.createElement("button");
+    if (i === 0) b.className = "primary";
+    b.textContent = a.label;
+    b.onclick = () => runCmd(a.cmd);
+    box.appendChild(b);
+  });
+}
+
+/* ---------- cost visibility ---------- */
+function fmtUsd(n) { return `$${(n ?? 0).toFixed(2)}`; }
+
+async function loadCosts() {
+  const box = $("costCard");
+  let data;
+  try { data = await (await fetch("/api/costs")).json(); }
+  catch { box.innerHTML = ""; return; }
+
+  const week = data.this_week;
+  const rows = week.by_command.map((e) =>
+    `<div class="row"><span>${esc(e.command)} · ${e.calls} call${e.calls === 1 ? "" : "s"}</span>` +
+    `<span class="t">${fmtUsd(e.cost)}</span></div>`).join("");
+
+  box.innerHTML =
+    `<div class="card">
+       <h2>Cost this week</h2>
+       <div class="statrow" style="margin-bottom:10px">
+         <div class="stat"><div class="n amber">${fmtUsd(week.total_cost)}</div><div class="k">spent this week</div></div>
+         <div class="stat"><div class="n">${week.calls}</div><div class="k">model calls</div></div>
+         <div class="stat"><div class="n dim" style="font-size:14px">${fmtUsd(data.all_time_cost)}</div><div class="k">all-time total</div></div>
+       </div>
+       ${rows || `<div class="dim">No model calls yet this week.</div>`}
+     </div>`;
+}
+
 /* ---------- dashboard ---------- */
 async function loadOverview() {
   const data = await (await fetch("/api/overview")).json();
@@ -113,9 +164,10 @@ async function loadOverview() {
     ? `<pre class="doc">${esc(data.this_week_agenda)}</pre>`
     : `<div class="dim">No agenda for ${esc(data.week)} yet — run <code>brain ingest</code>.</div>`;
 
-  // The "needs you" panel refreshes with the rest of the dashboard, so it
-  // updates after every ingest/meeting/agent action too.
+  // The "needs you" panel and cost card refresh with the rest of the
+  // dashboard, so both update after every ingest/meeting/agent action too.
   loadAttention();
+  loadCosts();
 }
 
 /* ---------- departments ---------- */
@@ -1055,3 +1107,4 @@ loadOverview();
 loadDepartments();
 loadBoardroom();
 loadCommands();
+loadQuickActions();

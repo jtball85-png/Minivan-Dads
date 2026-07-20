@@ -106,6 +106,12 @@ def cmd_status(hq: HQ) -> None:
             for r in rejected:
                 print(f"    {r.id} {r.action_type}: {'; '.join(r.reasons)}")
 
+    from brain.pricing import summarize_usage
+
+    week_start = date.fromisocalendar(*date.today().isocalendar()[:2], 1)
+    burn = summarize_usage(hq.read_llm_usage(since=week_start))
+    print(f"\nSpend this week: ${burn['total_cost']:.2f} ({burn['calls']} model call(s))")
+
 
 def cmd_ask(hq: HQ, llm: LLM, config: BrainConfig, question: str) -> None:
     system_blocks = build_system_blocks(config, hq, "ask.md")
@@ -315,7 +321,7 @@ def cmd_dashboard(hq: HQ, config: BrainConfig, host: str, port: int) -> None:
     chat_error: str | None = None
     try:
         from brain.dashboard.chat import register_chat_routes
-        register_chat_routes(app, config, hq, make_llm=lambda: LLM(config))
+        register_chat_routes(app, config, hq, make_llm=lambda command=None: LLM(config, hq, command))
     except Exception:
         chat_error = traceback.format_exc()
         log_path = hq.root.parent / "dashboard_startup.log"
@@ -513,6 +519,10 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="Example: brain agent market_intel",
     )
     agent_parser.add_argument("department", help="Department name (e.g. market_intel)")
+    agent_parser.add_argument(
+        "--exhibit", metavar="SLUG", default=None,
+        help="Hand this run a garage research exhibit (hq/research/{slug}.md) as one-time context",
+    )
 
     dashboard_parser = subparsers.add_parser(
         "dashboard",
@@ -558,19 +568,19 @@ def cli() -> None:
     if args.command == "status":
         cmd_status(hq)
     elif args.command == "ask":
-        llm = LLM(config)
+        llm = LLM(config, hq, command="ask")
         cmd_ask(hq, llm, config, args.question)
     elif args.command == "ingest":
-        llm = LLM(config)
+        llm = LLM(config, hq, command="ingest")
         cmd_ingest(hq, llm, config)
     elif args.command == "meeting":
-        llm = LLM(config)
+        llm = LLM(config, hq, command="meeting")
         cmd_meeting(hq, llm, config)
     elif args.command == "directive":
-        llm = LLM(config)
+        llm = LLM(config, hq, command="directive")
         cmd_directive(hq, llm, config, args.department)
     elif args.command == "boardroom":
-        llm = LLM(config)
+        llm = LLM(config, hq, command="boardroom")
         cmd_boardroom(hq, llm, config, args.topic,
                       all_departments=args.all_departments,
                       depts=args.depts)
@@ -580,7 +590,18 @@ def cli() -> None:
         cmd_dashboard(hq, config, args.host, args.port)
     elif args.command == "agent":
         from brain.agent import run_agent
-        raise SystemExit(run_agent(args.department, config, hq, LLM(config)))
+        exhibit, exhibit_label = "", ""
+        if args.exhibit:
+            try:
+                exhibit = hq.read_research_exhibit(args.exhibit)
+            except FileNotFoundError:
+                print(f"No research exhibit named {args.exhibit!r} at "
+                      f"hq/research/{args.exhibit}.md — nothing to hand this run.")
+                return
+            exhibit_label = f"Garage research exhibit: {args.exhibit}"
+        llm = LLM(config, hq, command=f"agent:{args.department}")
+        raise SystemExit(run_agent(args.department, config, hq, llm,
+                                   exhibit=exhibit, exhibit_label=exhibit_label))
 
 
 if __name__ == "__main__":

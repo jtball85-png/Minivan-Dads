@@ -74,6 +74,9 @@ class RuleRequest(BaseModel):
 
 class AgentRequest(BaseModel):
     department: str
+    # A garage research exhibit slug (hq/research/{exhibit}.md) to hand this
+    # run as one-time context — see CLAUDE.md's "Two rooms" section.
+    exhibit: str | None = None
 
 
 class ConsultRequest(BaseModel):
@@ -152,7 +155,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
         if not question:
             raise HTTPException(status_code=422, detail="Empty question")
 
-        llm = make_llm()
+        llm = make_llm(command="ask")
         system_blocks = build_system_blocks(config, hq, "ask.md")
 
         def event_stream():
@@ -229,7 +232,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
             exhibit_label = f"{dept}'s report ({week})"
 
         session = BoardroomSession(
-            make_llm(), config, hq, topic,
+            make_llm(command="boardroom"), config, hq, topic,
             input_fn=lambda prompt: "",  # never used by dashboard flow
             print_fn=lambda s: None,
             exhibit=exhibit, exhibit_label=exhibit_label,
@@ -355,7 +358,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
 
         def event_stream():
             yield _sse({"line": "Reading reports and synthesizing the agenda…"})
-            summary = run_ingest(hq, llm=make_llm(), config=config,
+            summary = run_ingest(hq, llm=make_llm(command="ingest"), config=config,
                                  print_fn=lambda s: None)
             agenda_text = summary["path"].read_text(encoding="utf-8")
             yield _sse({
@@ -374,13 +377,24 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
     def command_agent(body: AgentRequest):
         from brain.agent import run_agent
 
+        exhibit, exhibit_label = "", ""
+        if body.exhibit:
+            try:
+                exhibit = hq.read_research_exhibit(body.exhibit)
+            except FileNotFoundError:
+                raise HTTPException(status_code=404,
+                                    detail=f"No research exhibit named {body.exhibit!r}.")
+            exhibit_label = f"Garage research exhibit: {body.exhibit}"
+
         def event_stream():
             lines: list[str] = []
 
             def capture(line):
                 lines.append(str(line))
 
-            code = run_agent(body.department, config, hq, make_llm(), print_fn=capture)
+            code = run_agent(body.department, config, hq,
+                             make_llm(command=f"agent:{body.department}"), print_fn=capture,
+                             exhibit=exhibit, exhibit_label=exhibit_label)
             for line in lines:
                 yield _sse({"line": line})
             yield _sse({"done": True, "exit_code": code})
@@ -402,7 +416,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
         if not task:
             raise HTTPException(status_code=422, detail="Describe the joint task.")
 
-        session = CollaborationSession(make_llm(), config, hq, task, depts)
+        session = CollaborationSession(make_llm(command="collab"), config, hq, task, depts)
 
         def event_stream():
             yield _sse({"line": f"Convening {', '.join(depts)} on a joint deliverable…"})
@@ -430,7 +444,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
 
         advisory = dept_config.status != "active"
         blocks = participant_blocks(config, hq, "consult.md", dept, advisory)
-        llm = make_llm()
+        llm = make_llm(command="consult")
 
         def event_stream():
             for delta in llm.stream(blocks, f"The CEO asks you directly: {message}",
@@ -456,7 +470,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
         if meeting_state["session"] is not None:
             raise HTTPException(status_code=409,
                                 detail="A meeting is already in progress — close or abandon it first.")
-        session = MeetingSession(make_llm(), config, hq)
+        session = MeetingSession(make_llm(command="meeting"), config, hq)
         try:
             items = session.load_agenda()
         except FileNotFoundError as e:
@@ -564,7 +578,7 @@ def register_chat_routes(app: FastAPI, config: BrainConfig, hq: HQ, make_llm) ->
             f"Today's date is {date.today().isoformat()}."
         )
         system_blocks = build_system_blocks(config, hq, "directive.md")
-        response = make_llm().call(system_blocks, user_message,
+        response = make_llm(command="directive").call(system_blocks, user_message,
                                    max_tokens=config.max_tokens["directive"])
 
         if "[REQUIRES BOARD DECISION]" in response:

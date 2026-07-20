@@ -127,7 +127,7 @@ class TestExhibit:
 
         llm = FakeLLM(responses=["p1", "r1", "SECOND_ROUND: no"])
         app = create_app(config, hq)
-        register_chat_routes(app, config, hq, make_llm=lambda: llm)
+        register_chat_routes(app, config, hq, make_llm=lambda command=None: llm)
         client = TestClient(app)
         response = client.post("/api/boardroom/open", json={
             "topic": "Discuss the report",
@@ -140,7 +140,7 @@ class TestExhibit:
 
     def test_open_404s_when_no_report_to_discuss(self, config, hq, tmp_hq_root):
         app = create_app(config, hq)
-        register_chat_routes(app, config, hq, make_llm=lambda: FakeLLM())
+        register_chat_routes(app, config, hq, make_llm=lambda command=None: FakeLLM())
         client = TestClient(app)
         response = client.post("/api/boardroom/open", json={
             "topic": "Discuss", "exhibit_department": "creative",

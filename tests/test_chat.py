@@ -39,7 +39,7 @@ def make_client(config, hq, tmp_hq_root, responses):
 
     llm = StreamingFakeLLM(responses=responses)
     app = create_app(config, hq)
-    register_chat_routes(app, config, hq, make_llm=lambda: llm)
+    register_chat_routes(app, config, hq, make_llm=lambda command=None: llm)
     return TestClient(app), llm
 
 

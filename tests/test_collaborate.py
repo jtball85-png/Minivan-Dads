@@ -89,7 +89,7 @@ class TestCollaborateEndpoint:
     def _client(self, config, hq, responses):
         llm = StreamingFakeLLM(responses=responses)
         app = create_app(config, hq)
-        register_chat_routes(app, config, hq, make_llm=lambda: llm)
+        register_chat_routes(app, config, hq, make_llm=lambda command=None: llm)
         return TestClient(app), llm
 
     def test_streams_contributions_then_synthesis_then_saves(self, collab_env):

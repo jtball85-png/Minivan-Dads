@@ -19,7 +19,7 @@ from pathlib import Path
 
 from brain.actions.models import ActionRecord
 from brain.config import BrainConfig
-from brain.models import DecisionEntry, EscalationItem, ReportEntry, ReportStatus
+from brain.models import DecisionEntry, EscalationItem, LLMUsageRecord, ReportEntry, ReportStatus
 
 WEEK_KEY_RE = re.compile(r"^(\d{4})-W(\d{2})$")
 DECISION_HEADING_RE = re.compile(r"^## (\d{4}-\d{2}-\d{2}) — (.+)$", re.MULTILINE)
@@ -410,6 +410,21 @@ class HQ:
         path.write_text(content, encoding="utf-8")
         return path
 
+    def research_exhibit_path(self, slug: str) -> Path:
+        return self.root / "research" / f"{slug}.md"
+
+    def write_research_exhibit(self, slug: str, content: str) -> Path:
+        """Promote a garage research finding into HQ so a department agent
+        can actually read it (see CLAUDE.md's 'Two rooms' section — this is
+        the garage-to-board handoff point)."""
+        path = self.research_exhibit_path(slug)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        return path
+
+    def read_research_exhibit(self, slug: str) -> str:
+        return self.research_exhibit_path(slug).read_text(encoding="utf-8")
+
     # ------------------------------------------------------------------
     # Action log + snapshots (action layer)
     # ------------------------------------------------------------------
@@ -444,6 +459,32 @@ class HQ:
             latest[record.id] = record  # dict preserves first-seen order; value updates
 
         records = list(latest.values())
+        if since is not None:
+            records = [r for r in records if date.fromisoformat(r.timestamp[:10]) >= since]
+        return records
+
+    def llm_usage_log_path(self) -> Path:
+        return self.root / "actions" / "llm_usage.jsonl"
+
+    def append_llm_usage(self, record: LLMUsageRecord) -> None:
+        """Append one JSONL line — cost telemetry, not a company decision,
+        but still append-only ('a' mode only) so nothing silently drops
+        from the CEO's view of spend."""
+        path = self.llm_usage_log_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a", encoding="utf-8", newline="\n") as f:
+            f.write(json.dumps(record.to_json_dict()) + "\n")
+
+    def read_llm_usage(self, since: date | None = None) -> list[LLMUsageRecord]:
+        path = self.llm_usage_log_path()
+        if not path.exists():
+            return []
+        records = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            records.append(LLMUsageRecord.from_json_dict(json.loads(line)))
         if since is not None:
             records = [r for r in records if date.fromisoformat(r.timestamp[:10]) >= since]
         return records
