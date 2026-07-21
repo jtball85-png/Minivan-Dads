@@ -1,0 +1,270 @@
+<!doctype html>
+<title>Josh Ball Art — Workflow Cheat Sheet</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --app-bg: #eeece6;
+    --app-ink: #2a2822;
+    --app-ink-soft: #6b675e;
+    --app-accent: #2b4c6f;
+    --app-line: #d8d4cc;
+    --paper-shadow: 0 1px 2px rgba(30,28,22,.06), 0 18px 40px rgba(30,28,22,.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --app-bg: #17181a; --app-ink: #e9e7e1; --app-ink-soft: #9a968c; --app-accent: #7fa5c9; --app-line: #33322d; --paper-shadow: 0 1px 2px rgba(0,0,0,.4), 0 18px 44px rgba(0,0,0,.55); }
+  }
+  :root[data-theme="dark"] { --app-bg: #17181a; --app-ink: #e9e7e1; --app-ink-soft: #9a968c; --app-accent: #7fa5c9; --app-line: #33322d; --paper-shadow: 0 1px 2px rgba(0,0,0,.4), 0 18px 44px rgba(0,0,0,.55); }
+  :root[data-theme="light"] { --app-bg: #eeece6; --app-ink: #2a2822; --app-ink-soft: #6b675e; --app-accent: #2b4c6f; --app-line: #d8d4cc; --paper-shadow: 0 1px 2px rgba(30,28,22,.06), 0 18px 40px rgba(30,28,22,.14); }
+
+  /* paper tokens — the sheet itself deliberately stays one world (real paper),
+     since it exists to preview an actual physical printout */
+  :root { --paper: #f8f6f2; --ink: #211f1c; --ink-soft: #5b574f; --cyan: #2b4c6f; --cyan-soft: #3f6488; --sepia: #8a5a3b; --rule: #dcd7cc; --rule-strong: #b9b2a2; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--app-bg); color: var(--app-ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 28px 16px 64px;
+  }
+  .toolbar {
+    max-width: 8.5in; margin: 0 auto 20px; display: flex; align-items: baseline;
+    justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .toolbar h1 { font-size: 15px; font-weight: 650; letter-spacing: .01em; margin: 0; text-wrap: balance; }
+  .toolbar p { margin: 3px 0 0; font-size: 12.5px; color: var(--app-ink-soft); }
+  .printbtn {
+    font: inherit; font-size: 13px; font-weight: 600; letter-spacing: .01em;
+    color: #f8f6f2; background: var(--app-accent); border: none; border-radius: 6px;
+    padding: 9px 16px; cursor: pointer;
+  }
+  .printbtn:hover { filter: brightness(1.08); }
+  .printbtn:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 3px; }
+
+  .stack { max-width: 8.5in; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+
+  /* ---- the simulated / actual printed sheet ---- */
+  .sheet {
+    background: var(--paper); color: var(--ink); width: 8.5in; min-height: 11in;
+    padding: .5in; box-shadow: var(--paper-shadow); border-radius: 2px;
+    font-size: 9.6px; line-height: 1.42;
+  }
+  .mast { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1.5px solid var(--ink); padding-bottom: 8px; margin-bottom: 10px; }
+  .mast .eyebrow { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 9px; letter-spacing: .11em; text-transform: uppercase; color: var(--cyan); margin: 0 0 3px; }
+  .mast h2 { margin: 0; font-size: 21px; font-weight: 750; letter-spacing: -.01em; text-wrap: balance; }
+  .mast .pg { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; color: var(--ink-soft); }
+
+  .rule-box {
+    border: 1px solid var(--sepia); border-left-width: 3px; background: rgba(138,90,59,.06);
+    padding: 8px 11px; margin: 0 0 13px; border-radius: 2px;
+  }
+  .rule-box .rk { font-family: ui-monospace, monospace; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--sepia); font-weight: 700; margin: 0 0 2px; }
+  .rule-box p { margin: 0; font-size: 10.3px; font-weight: 600; }
+
+  .cols { column-count: 2; column-gap: 24px; }
+  .block { break-inside: avoid; margin-bottom: 13px; }
+  .block h3 {
+    font-size: 10.6px; font-weight: 750; color: var(--cyan); text-transform: uppercase;
+    letter-spacing: .04em; margin: 0 0 5px; border-bottom: 1px solid var(--rule); padding-bottom: 3px;
+  }
+  .steps { margin: 0; padding: 0; list-style: none; }
+  .steps li { display: flex; gap: 6px; margin: 0 0 4px; }
+  .steps li::before { content: counter(s); counter-increment: s; flex: none; font-family: ui-monospace, monospace; font-size: 8.5px; font-weight: 700; color: var(--paper); background: var(--cyan-soft); width: 13px; height: 13px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .steps { counter-reset: s; }
+  .steps li span { flex: 1; }
+  .note { color: var(--ink-soft); font-size: 9.2px; }
+  kbd, .val {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 8.8px;
+    background: rgba(43,76,111,.09); border: 1px solid var(--rule); border-radius: 3px;
+    padding: 0 3.5px; color: var(--ink);
+  }
+  .path { font-family: ui-monospace, monospace; font-size: 9.2px; color: var(--cyan-soft); }
+
+  table.dpi { width: 100%; border-collapse: collapse; margin: 4px 0 2px; font-size: 9px; }
+  table.dpi th, table.dpi td { border: 1px solid var(--rule); padding: 3px 5px; text-align: left; font-variant-numeric: tabular-nums; }
+  table.dpi th { background: rgba(43,76,111,.07); font-weight: 700; color: var(--cyan); }
+
+  .foot { margin-top: 10px; padding-top: 7px; border-top: 1px solid var(--rule); font-size: 8.6px; color: var(--ink-soft); display: flex; justify-content: space-between; }
+
+  @media print {
+    body { background: #fff !important; padding: 0; margin: 0; }
+    .no-print { display: none !important; }
+    .stack { gap: 0; max-width: none; }
+    .sheet { box-shadow: none; border-radius: 0; width: auto; min-height: auto; page-break-after: always; }
+    .sheet:last-child { page-break-after: auto; }
+    @page { size: letter; margin: 0.45in; }
+  }
+</style>
+
+<div class="toolbar no-print">
+  <div>
+    <h1>Josh Ball Art — Workflow Cheat Sheet</h1>
+    <p>Capture → Lightroom → Photoshop → Print. Print double-sided on 8.5×11 (2 pages, 1 sheet).</p>
+  </div>
+  <button class="printbtn" onclick="window.print()">Print this sheet</button>
+</div>
+
+<div class="stack">
+
+  <!-- ============ SHEET 1 : CAPTURE -> EDIT ============ -->
+  <div class="sheet">
+    <div class="mast">
+      <div>
+        <p class="eyebrow">Josh Ball Art · Production reference</p>
+        <h2>Capture → Edit</h2>
+      </div>
+      <div class="pg">1 / 2</div>
+    </div>
+
+    <div class="rule-box">
+      <p class="rk">The one rule that protects everything</p>
+      <p>The master is never touched. Full resolution, native ratio, borderless, flattened once, exported once. Every print size is derived from it — nothing is ever resized or resampled inside the master itself.</p>
+    </div>
+
+    <div class="cols">
+
+      <div class="block">
+        <h3>1 — Import (card → Lightroom)</h3>
+        <ol class="steps">
+          <li><span>Plug in the card. Open Lightroom, go straight to Import — skip manually copying to a drive first.</span></li>
+          <li><span>Choose <span class="val">Copy</span> (never Move) from the card.</span></li>
+          <li><span>File Handling → check <span class="val">Make a Second Copy To:</span>, point it at a second drive. Instant redundancy, no extra step later.</span></li>
+          <li><span>Destination → <span class="val">Organize: By Date</span>.</span></li>
+        </ol>
+      </div>
+
+      <div class="block">
+        <h3>2 — Cull &amp; rate</h3>
+        <ol class="steps">
+          <li><span>Turn on <span class="val">Auto Advance</span> (Photo menu) first.</span></li>
+          <li><span>First pass: <kbd>X</kbd> to reject — don't delete outright yet.</span></li>
+          <li><span>Use <kbd>N</kbd> Survey view to compare near-duplicate burst shots side by side.</span></li>
+          <li><span>Rate keepers 3–5 stars.</span></li>
+          <li><span>Batch-clear: <span class="path">Photo › Delete Rejected Photos</span>.</span></li>
+        </ol>
+      </div>
+
+      <div class="block">
+        <h3>3 — Develop (Lightroom)</h3>
+        <ol class="steps">
+          <li><span>Exposure, white balance, color, lens correction — all here.</span></li>
+          <li><span class="note">No cropping in Lightroom. Crop is decided later, in Photoshop, non‑destructively.</span></li>
+        </ol>
+      </div>
+
+      <div class="block">
+        <h3>4 — Send to Photoshop</h3>
+        <ol class="steps">
+          <li><span>Right‑click → <span class="path">Edit In › Photoshop</span> (with Lightroom adjustments).</span></li>
+          <li><span class="note">Opens a full‑resolution copy, still linked to the catalog.</span></li>
+        </ol>
+      </div>
+
+      <div class="block">
+        <h3>5 — Edit &amp; crop (Photoshop)</h3>
+        <ol class="steps">
+          <li><span>Retouch, dodge/burn, composite — normal pixel work.</span></li>
+          <li><span>Need a different crop mid‑edit? Press <kbd>C</kbd>, crop freeform for content — never to force a print ratio.</span></li>
+          <li><span>Leave <span class="val">Delete Cropped Pixels</span> unchecked — stays adjustable later.</span></li>
+          <li><span class="note">Never use Image Size to shrink the file. Ever.</span></li>
+        </ol>
+      </div>
+
+      <div class="block">
+        <h3>6 — Export the master</h3>
+        <ol class="steps">
+          <li><span><span class="path">Layer › Flatten Image</span>.</span></li>
+          <li><span><span class="path">File › Export › Export As</span> — leave Width/Height untouched.</span></li>
+          <li><span>Quality <span class="val">10</span> (max), or TIFF for true lossless.</span></li>
+          <li><span>Check both <span class="val">Convert to sRGB</span> and <span class="val">Embed Color Profile</span>.</span></li>
+          <li><span>Save to <span class="val">garage/prints/masters/</span>.</span></li>
+          <li><span class="note">Keep the layered PSD too — that's your real, permanent negative.</span></li>
+        </ol>
+      </div>
+
+    </div>
+
+    <div class="foot"><span>Josh Ball Art</span><span>Capture → Edit — page 1 of 2</span></div>
+  </div>
+
+  <!-- ============ SHEET 2 : PRINT -> PRODUCTION + CATALOG CARE ============ -->
+  <div class="sheet">
+    <div class="mast">
+      <div>
+        <p class="eyebrow">Josh Ball Art · Production reference</p>
+        <h2>Print → Production</h2>
+      </div>
+      <div class="pg">2 / 2</div>
+    </div>
+
+    <div class="rule-box">
+      <p class="rk">The one rule that protects everything</p>
+      <p><span class="path">File › Print</span> — never <span class="path">Image › Image Size</span>. Print scales the page, not the file. The document on disk never changes.</p>
+    </div>
+
+    <div class="cols">
+
+      <div class="block">
+        <h3>1 — Home test print</h3>
+        <ol class="steps">
+          <li><span><kbd>Ctrl</kbd>+<kbd>P</kbd> → Color Management → <span class="val">Photoshop Manages Colors</span>.</span></li>
+          <li><span>Printer Profile → match the exact paper loaded now (glossy and matte are different profiles).</span></li>
+          <li><span>Open the OS print driver settings → turn its color management <span class="val">OFF</span> (avoids double conversion — washed‑out or oversaturated prints).</span></li>
+          <li><span>Position &amp; Size → type the real target size into Height/Width: <span class="val">8×10</span> / <span class="val">11×14</span> / <span class="val">16×20</span>.</span></li>
+          <li><span>Print. Swap paper, swap only the Printer Profile, print again.</span></li>
+        </ol>
+      </div>
+
+      <div class="block">
+        <h3>2 — Resolution gut‑check</h3>
+        <p class="note" style="margin:0 0 4px">Check <span class="path">Image › Image Size</span> before you trust the print. Long‑edge pixels needed:</p>
+        <table class="dpi">
+          <tr><th>Size</th><th>300 dpi</th><th>200 dpi floor</th></tr>
+          <tr><td>8×10</td><td>3000 px</td><td>2000 px</td></tr>
+          <tr><td>11×14</td><td>4200 px</td><td>2800 px</td></tr>
+          <tr><td>16×20</td><td>6000 px</td><td>4000 px</td></tr>
+        </table>
+        <p class="note" style="margin-top:4px">Below the floor → sells smaller, or not at that size. Never upscaled silently.</p>
+      </div>
+
+      <div class="block">
+        <h3>3 — Green light</h3>
+        <ol class="steps">
+          <li><span>Glossy <em>and</em> matte both look right at home <strong>and</strong> the size clears the floor above → ready.</span></li>
+          <li><span>Master already in <span class="val">garage/prints/masters/</span> → tell Claude to run it.</span></li>
+          <li><span class="note">Pipeline derives 8×10 / 11×14 / 16×20 with white borders + a proof sheet, flags anything under‑resolved.</span></li>
+        </ol>
+      </div>
+
+      <div class="block">
+        <h3>4 — Production sample</h3>
+        <ol class="steps">
+          <li><span>Order the hero size as a FinerWorks sample before listing it for sale.</span></li>
+          <li><span class="note">B&amp;W tonal neutrality (no green/magenta cast) is the thing to judge.</span></li>
+          <li><span>Matches your home print's intent → approve → list.</span></li>
+        </ol>
+      </div>
+
+      <div class="block">
+        <h3>5 — Catalog care</h3>
+        <ol class="steps">
+          <li><span>Live catalog lives on the <strong>internal</strong> drive. Always.</span></li>
+          <li><span>Backups → external SSD is fine. Catalog Settings → back up <span class="val">every exit</span> while unstable, <span class="val">weekly</span> once healthy.</span></li>
+          <li><span>Run <span class="path">File › Optimize Catalog</span> periodically.</span></li>
+        </ol>
+      </div>
+
+      <div class="block">
+        <h3>6 — If it crashes: recover</h3>
+        <ol class="steps">
+          <li><span><span class="path">File › Open Catalog</span> → pick a dated backup folder.</span></li>
+          <li><span>Confirm it opens clean, then <span class="path">File › Save Catalog As</span> → save it onto the internal drive.</span></li>
+          <li><span class="note">Keep working from that internal copy — never settle back onto the external drive.</span></li>
+        </ol>
+      </div>
+
+    </div>
+
+    <div class="foot"><span>Josh Ball Art</span><span>Print → Production — page 2 of 2</span></div>
+  </div>
+
+</div>
