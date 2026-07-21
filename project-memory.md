@@ -1,5 +1,5 @@
 # Project Memory
-Last updated: 2026-07-20 (end of day)
+Last updated: 2026-07-21 (end of day)
 
 This file captures decisions, reasoning, and session context that
 project-context.md doesn't hold. It is Claude's memory between sessions.
@@ -22,6 +22,53 @@ Decisions that shaped the project — keep these forever.
 ## Sessions
 
 Most recent session at the top.
+
+## Session — 2026-07-21
+
+**Focus:** Started on Minivan Dads roadmap items, but the CEO reconsidered POD apparel economics (thin margins) and pivoted the whole project to run their real art business, Josh Ball Art — then spent the rest of the session building the print-production pipeline: Lightroom/Photoshop workflow correction, a master-to-print-sizes derivation tool, and a printable cheat sheet with a real print-QA gate.
+
+**Decisions made:**
+- Company pivot ratified: the brain now runs **Josh Ball Art** (joshballart.com, Ventura CA — cyanotype/B&W photography/suminagashi/linocut, Jacquard-sponsored). Minivan Dads is PARKED, not deleted — charter archived to `hq/charter/archive/minivan-dads-company.md`, tee stays unpublished in Printful, decision logged 2026-07-21.
+- Strategy ratified (CEO's own priority order): 1) originals, 2) giclée prints — mostly black & white photography plus cyanotype prints "priced like photos" — sizes 8×10/11×14/16×20 with white borders, 3) cyanotype/suminagashi workshops (popup + outdoor forage formats), 4) POD under a 30% margin floor (Sticker Mule to explore), 5) Jacquard supply shop maintained. Target: board runs 75–80% of day-to-day.
+- Print partner: **FinerWorks chosen as primary** (CEO's call — biggest fine-art paper selection, praised archival matte; confirmed it has a free Shopify fulfillment app + API, so full automation is real, not aspirational). Prodigi = fallback, gicleetoday kept for hand-touched runs, theprintspace/creativehub ruled out (+20% fee, UK-centric).
+- Master-file philosophy locked in: the master is exported **full native resolution, natural aspect ratio, borderless, never resized/resampled** — all sizing/bordering happens downstream, per-size, non-destructively, so one master serves every print size.
+- Photoshop crop workflow settled: crop happens in Photoshop (not Lightroom) via the Crop tool with "Delete Cropped Pixels" unchecked (non-destructive); Lightroom stays for raw-level Develop (exposure/color/lens) only. The saved layered PSD is the permanent "negative"; the flattened export is a one-way "print" derived from it.
+- Home test-printing must use `File > Print` (Photoshop-manages-colors, paper-specific ICC profile, printer driver color management OFF) — never `Image > Image Size`, which was the CEO's years-long habit and root cause of an under-resolution master.
+- Lightroom catalog relocated in principle: catalog file must live on the **internal drive** (not the external SSD it shared with the photo library) — this is the diagnosed root cause of LRC's constant crashing, independent of the drive being SSD (the risk is USB connection reliability, not spinning-disk latency). Backups go to the external drive; recovery flow is Open Catalog → Save Catalog As → back to internal.
+- Deliverable format decision: for a print-oriented artifact, ship a **pre-verified PDF**, not just an HTML page relying on the hosted Artifact viewer's print path — the hosted URL's wrapper likely explains a 3-page/broken print the CEO saw even though the raw local file renders correctly (2 pages, verified).
+
+**Problems solved:**
+- CEO's first real master export (`Test.jpg`, 2385×1590) ran through the real derivation pipeline: 8×10 passed (265 DPI), 11×14 and 16×20 failed the 200 DPI floor (191/132 DPI) — confirmed the file was undersized, traced to the Image-Size-before-export habit, not a pipeline bug.
+- Print-button dead click in the cheat sheet artifact: `window.print()` from a script is blocked by the Artifact's iframe sandbox (no visible error, just silently no-ops) — fixed by replacing the fake button with a `Ctrl+P` instruction badge (a real OS-level shortcut bypasses the sandbox restriction entirely).
+- `verify_print.py`'s own first version failed silently (exit 0, no PDF) — root cause: Edge's headless PDF write finishes a beat after the process returns, and the script checked `pdf_path.exists()` immediately with no wait. Fixed with a poll loop (up to 10s) instead of a guessed fixed sleep. Also fixed absolute-vs-relative path handling for the GUI subprocess.
+
+**Approaches discussed:**
+- MCP servers for Photoshop exist (community/unofficial — `photoshop-mcp`, `adobe-mcp`, `dcc-mcp-photoshop` — via UXP plugin + local bridge), correcting an earlier flat "I can't be live in your Photoshop" — technically possible, but deliberately not adopted: the derive-from-a-clean-master architecture is safer (never touches the live PSD) and the only thing an MCP bridge would save is one Export click, not worth the broad unofficial-tool trust surface.
+- Etsy's native Printful integration would auto-fulfill Etsy orders once connected — order/delivery tracking can mostly ride on the Printful connector already built, not a separate Etsy API build.
+
+**Left unresolved:**
+- Etsy shop for Josh Ball Art: confirmed absent from Google search entirely (likely dormant/empty) — CEO has not yet acted on connecting/reviving it.
+- FinerWorks sample order not yet placed — waiting on the CEO to pick hero image(s) (one B&W photo + one cyanotype, since B&W tonal neutrality is the key test) and export a proper full-resolution master.
+- Lightroom catalog has not yet actually been moved to the internal drive — diagnosed and planned, not executed.
+- The hosted-Artifact-wrapper theory for the 3-page print discrepancy is a strong hypothesis, not confirmed (no way to authenticate and test the exact hosted URL from this environment) — worked around via a verified local PDF rather than root-caused on the platform side.
+- API-key hygiene revisit still pending (carried over from 2026-07-20, see the standing `revisit-api-keys` memory).
+
+**Files changed this session:**
+```
+ garage/prints/derive_prints.py                     | 104 ++++++++
+ garage/prints/verify_print.py                      | 110 +++++++++
+ garage/prints/workflow-cheat-sheet.html            | 268 +++++++++++++++++++++
+ garage/prints/workflow-cheat-sheet.pdf             | (new, verified 2-page PDF)
+ garage/prints/masters/, proofs/, ready/            | (pipeline test artifacts)
+ garage/research/joshballart-phase0-print-partner-2026-07-21.md | 74 ++++++
+ hq/charter/archive/minivan-dads-company.md         | 79 ++++++ (new, archived)
+ hq/charter/company.md                              | 118 ++++----- (rewritten: Josh Ball Art)
+ hq/decisions/log.md                                |   5 +
+ hq/directives/creative.md                          |  55 ++---
+ hq/directives/market_intel.md                      |  56 +++--
+ hq/directives/storefront.md                        |  89 +++---- (x2 this session)
+ 16 files changed, 783 insertions(+), 175 deletions(-)  (5 commits: d228bef..846ad60)
+```
 
 ## Session — 2026-07-20
 
