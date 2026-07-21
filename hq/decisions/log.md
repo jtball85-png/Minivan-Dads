@@ -98,3 +98,8 @@ Format per entry:
 - Rationale: The CEO directed Creative's activation ahead of the roadmap's stated Phase 3 gates (Phase 2 exit test and hard shop-open date both still open) to get market-research and design-concept support now. Creative moves dormant -> active at Tier 1 (draft-only -- produces concepts, a human still publishes), with an initial mandate covering the design-concept backlog and the backup-handle brand-voice check that has been waiting on this activation since 2026-07-17.
 - Decided by: CEO
 - Affected departments: creative, market_intel
+
+## 2026-07-21 — Company pivot: the brain now runs Josh Ball Art; Minivan Dads parked
+- Rationale: POD apparel margins are structurally thin and the CEO owns an established art practice (Josh Ball Art: joshballart.com, socials, Jacquard sponsorship, Legion Paper collaboration, Ventura community) where the same machinery serves far better economics. A full site/store/social audit (2026-07-21) showed proven demand for originals (all sold), a supplies-heavy store, and no purchasable hero art — the inverted-store problem this pivot fixes. Strategy ratified by the CEO: originals + giclee prints (mostly B&W photography, plus cyanotype prints priced as photos) first, workshops second, POD third under a margin floor, Jacquard shop maintained; board to run 75–80% of day-to-day. Minivan Dads is PARKED, not killed: the quiet-game tee stays unpublished in Printful, all HQ history preserved in git, charter archived to hq/charter/archive/. Print-partner direction: Prodigi-first pending CEO-judged samples (B&W neutrality is the key test); gicleetoday retained for hand-touched runs.
+- Decided by: CEO
+- Affected departments: all
