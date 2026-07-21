@@ -23,6 +23,31 @@ Decisions that shaped the project — keep these forever.
 
 Most recent session at the top.
 
+## Session — 2026-07-21 (2)
+
+**Focus:** CEO wanted to shift focus to Printful merch beyond apparel (posters, mugs, etc.), starting with an existing Illustrator design ("Bodysurf Fin") with multiple color combos already pushed to the Josh Ball Art store, and asked Claude Code to manage merch and the store going forward.
+
+**Decisions made:**
+- Store target confirmed as **Josh Ball Art** (not a Minivan Dads revival) for this POD merch line.
+- CEO chose a recreation-as-test approach for the Bodysurf Fin design (no source file loaded — the real Illustrator/Photoshop files are on an external drive that wasn't connected this session); proper design/artwork handoff from that drive is explicitly pinned for a later session.
+- CEO rejected the recreation outright as a poor visual match to the reference photo and instructed all draft files be deleted — done, nothing was ever pushed live.
+- No work started on a Shopify connector; CEO said nothing to do on that right now.
+
+**Problems solved:**
+- None — the design recreation attempt did not reach an accepted state.
+
+**Approaches discussed:**
+- Confirmed via a live fetch of joshballart.com/collections/drinkware that "Bodysurf Fin" is already a real, live design across 3 drinkware products (mug, enamel cup, tumbler) with 7 real color combos on file: Red/Yellow, Peach/Burnt Orange, Blue/Pink, Peach/Blue, Lime Green/Electric Blue, Lavender/Teal, Black/White — useful reference for any future attempt.
+- Clarified product/collection semantics: color variants of one design belong in a single Printful product listing (variants), not separate listings per color; "collection" is for grouping across different product types that share a design.
+- Confirmed no Shopify MCP server or connector exists yet (`brain/connectors/` has Printful and Etsy only; `shopify.update_listing_copy`/`shopify.update_listing_images` are registered as allowed action *types* in `brain/actions/limits.yaml` but have no implementation). Building one requires the CEO to create a Shopify custom app/Admin API access token first (CEO-only, account-credential creation) — even once built, price/publish/brand-identity changes would still always escalate to the CEO per the governance model, never become autonomous.
+
+**Left unresolved:**
+- Real Bodysurf Fin recreation from the actual Illustrator/Photoshop source file — waiting on the CEO to connect the `E:\Products\Printful Products` external drive.
+- Whether/when to build a real Shopify connector — no credentials created yet, no code started.
+
+**Files changed this session:**
+None committed. Design draft files (`garage/design/bodysurf-fin-2026-07-21*`) were created and then fully deleted per the CEO's rejection before anything was committed — net zero change to the repo.
+
 ## Session — 2026-07-21
 
 **Focus:** Started on Minivan Dads roadmap items, but the CEO reconsidered POD apparel economics (thin margins) and pivoted the whole project to run their real art business, Josh Ball Art — then spent the rest of the session building the print-production pipeline: Lightroom/Photoshop workflow correction, a master-to-print-sizes derivation tool, and a printable cheat sheet with a real print-QA gate.
