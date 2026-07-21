@@ -32,13 +32,11 @@
   }
   .toolbar h1 { font-size: 15px; font-weight: 650; letter-spacing: .01em; margin: 0; text-wrap: balance; }
   .toolbar p { margin: 3px 0 0; font-size: 12.5px; color: var(--app-ink-soft); }
-  .printbtn {
-    font: inherit; font-size: 13px; font-weight: 600; letter-spacing: .01em;
-    color: #f8f6f2; background: var(--app-accent); border: none; border-radius: 6px;
-    padding: 9px 16px; cursor: pointer;
+  .hint {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600;
+    color: #f8f6f2; background: var(--app-accent); border-radius: 6px; padding: 7px 12px; white-space: nowrap;
   }
-  .printbtn:hover { filter: brightness(1.08); }
-  .printbtn:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 3px; }
+  .hint kbd { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.35); color: #f8f6f2; }
 
   .stack { max-width: 8.5in; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
 
@@ -98,9 +96,9 @@
 <div class="toolbar no-print">
   <div>
     <h1>Josh Ball Art — Workflow Cheat Sheet</h1>
-    <p>Capture → Lightroom → Photoshop → Print. Print double-sided on 8.5×11 (2 pages, 1 sheet).</p>
+    <p>Capture → Lightroom → Photoshop → Print. 2 pages — print double-sided, long-edge binding.</p>
   </div>
-  <button class="printbtn" onclick="window.print()">Print this sheet</button>
+  <span class="hint"><kbd>Ctrl</kbd>+<kbd>P</kbd> to print</span>
 </div>
 
 <div class="stack">
