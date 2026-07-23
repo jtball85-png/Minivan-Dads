@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-23T11:17:27",
+  "generated_at": "2026-07-23T11:36:26",
   "drive_root": "D:\\Products\\Printful Products",
   "drive_mounted": true,
   "printful_catalog": {
@@ -151,9 +151,9 @@
         {
           "key": "beanie",
           "drive_dir": "Embroidered Beanie",
-          "printful_type": "embroidered beanie",
-          "art_status": "art-ready-not-live",
-          "note": "36 per-colorway mockup jpgs exist (not blank templates); real embroidery guideline PDF + .ai templates already curated at garage/design/printful-templates/embroidered-beanie/",
+          "printful_type": "embroidered beanie (cuffed)",
+          "art_status": "live",
+          "note": "API-confirmed live 2026-07-23 as \"Shred in Style Black Fin Bodysurf Cuffed Beanie\" (sync id 334471140, 6 variants); real embroidery guideline PDF + .ai templates already curated at garage/design/printful-templates/embroidered-beanie/",
           "scan": {
             "exists": true,
             "size_mb": 21.4,

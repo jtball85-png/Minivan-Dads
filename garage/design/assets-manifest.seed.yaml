@@ -65,9 +65,9 @@ designs:
           the plan's "flagged for later" section.
       - key: beanie
         drive_dir: Embroidered Beanie
-        printful_type: embroidered beanie
-        art_status: art-ready-not-live
-        note: 36 per-colorway mockup jpgs exist (not blank templates); real embroidery guideline PDF + .ai templates already curated at garage/design/printful-templates/embroidered-beanie/
+        printful_type: embroidered beanie (cuffed)
+        art_status: live
+        note: API-confirmed live 2026-07-23 as "Shred in Style Black Fin Bodysurf Cuffed Beanie" (sync id 334471140, 6 variants); real embroidery guideline PDF + .ai templates already curated at garage/design/printful-templates/embroidered-beanie/
       - key: tank-top
         drive_dir: "Men’s Staple Tank Top  Bella + Canvas 3480"
         printful_type: tank top (Bella+Canvas 3480)

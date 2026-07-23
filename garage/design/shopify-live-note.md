@@ -27,14 +27,41 @@ obsolete) is a separate, CEO-gated future build.
 (Poster was previously classified art-ready-not-live in the manifest —
 corrected to live 2026-07-23.)
 
-## Printful account note (2026-07-23, important)
+## Printful account note (RESOLVED 2026-07-23)
 
-The `.env` `PRINTFUL_API_KEY` belongs to a Printful account whose ONLY
-store is **"Theminivandads"** (id 18493772, 1 sync product, 0 product
-templates). The joshballart products above are fulfilled by a **different
-Printful account** the brain has no API access to. CEO action needed: create
-an API token in the joshballart Printful account (Settings → Developers)
-and update `.env`. Until then, live-store review is storefront-fetch only.
+The original `.env` key belonged to the parked Minivan Dads Printful account
+(store "Theminivandads", now preserved as `PRINTFUL_API_KEY_MVD` /
+`PRINTFUL_STORE_ID_MVD`). The CEO created a token for the **Josh Ball Art**
+Printful account same day — now the primary `PRINTFUL_API_KEY`, store id
+**13032926** (Shopify platform).
+
+### API-verified synced products (2026-07-23, via /sync/products)
+
+| Sync id | Product | Variants |
+|---|---|---|
+| 334838344 | Catch a Wave of Color: Bodysurf Fin Poster — Framed | 90 |
+| 334775587 | Catch a Wave of Color: Bodysurf Fin Poster | 55 |
+| 334471140 | Shred in Style: Black Fin Bodysurf **Cuffed Beanie** | 6 |
+| 334165864 | Sunsets & Sips: Bodysurf Fin Tumbler | 7 |
+| 334161181 | Ride the Foam: Bodysurf Fin Enamel Cup | 7 |
+| 334116103 | Josh Ball Art Logo White Glossy Mug (California Living) | 3 |
+| 334113961 | Bodysurf Fin White Glossy Mug (21 = 3 sizes × 7 combos) | 21 |
+
+Variant-level reads work (retail prices, SKUs, print files). The beanie was
+previously misclassified art-ready-not-live — corrected to live.
+
+### Known token/platform limits (2026-07-23)
+
+- Token lacks the `product_templates/read` scope (403) — CEO to add it in
+  Printful → Settings → Developers when convenient (+ Orders read for
+  future fulfillment tracking).
+- Shopify-platform stores use the ecommerce **sync** API (`/sync/products`),
+  not the manual-store `/store/products` API the connector was built
+  against — reads + edits of existing synced products are supported;
+  **creating new products via API is not** (new products are created in the
+  Printful dashboard and pushed to Shopify). The connector needs a
+  platform-aware extension before any governed edit actions run against
+  this store; new-product pushes remain dashboard work (CEO) for now.
 
 ## Not checked in that pass
 
