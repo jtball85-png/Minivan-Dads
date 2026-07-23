@@ -1,0 +1,27 @@
+# Bodysurf Fin t-shirt — finished art already EXISTS on the drive (the
+# "Unisex Staple T-Shirt Bella + Canvas 3001" folder has a Bodysurf Fin
+# master PSD + Red/Yellow mockups the CEO already made). PREPARED, NOT
+# PUSHED. Per the lineup research: tees are the identity anchor, not the
+# margin play — worth listing for brand presence.
+#
+# Print file: export from the CEO's own finished art on the drive
+# (D:\Products\Printful Products\Unisex Staple T-Shirt  Bella + Canvas 3001\),
+# NOT from a fresh composition — the placement/scale decisions are already
+# made in that PSD. Colorway below matches the mockups found (Red/Yellow on
+# dark garments mirrors the live drinkware's Red Yellow combo); CEO picks
+# final garment colors before any live run.
+
+agent: creative
+product_name: "Bodysurf Fin Tee"
+external_id: jba-bodysurf-fin-tee-v1
+printful_product_id: 71          # Bella + Canvas 3001 Unisex Staple Tee
+colors: [Black, Navy, Dark Grey Heather]   # research anchors; CEO to confirm
+sizes: [S, M, L, XL, 2XL]
+files:
+  - placement: front
+    # URL supplied at run time — 300 DPI export from the drive's finished PSD.
+rationale: >-
+  Finished CEO art exists on the asset drive (assets-manifest:
+  bodysurf-fin-tshirt-candidate, art-ready-not-live). Tee = brand-identity
+  anchor per the 2026-07-19 lineup research.
+directive_version: "2026-07-21"

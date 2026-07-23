@@ -1,0 +1,29 @@
+# Die-cut stickers — the lineup research's #1 recommended add (best unit
+# economics in POD, near-zero return risk) and a natural fit: the fin
+# silhouette IS the die-cut shape. PREPARED, NOT PUSHED.
+#
+# PRINT FILE REQUIREMENT (why this isn't ready to go live yet): a die-cut
+# sticker file must have a TRANSPARENT background — Printful cuts along the
+# design's contour, and a white rectangle behind the fin would make it a
+# square sticker. The garage rasterizer (compose_preview.py) fills white and
+# can't emit transparency, so the print file must come from the real master:
+# either the CEO exports a transparent PNG from
+#   D:\Products\Designs Digital Illustrations\Bodysurf Fin Fill\*.ai
+# (File > Export > PNG, transparent background, 300 DPI), or we add a
+# transparent-export helper to the garage tooling first.
+
+agent: creative
+product_name: "Bodysurf Fin Die-Cut Sticker"
+external_id: jba-bodysurf-fin-die-cut-sticker-v1
+printful_product_id: 957         # Die-Cut Stickers (Satin)
+colors: [Satin]
+sizes: ["3″×3″", "4″×4″"]        # Printful uses U+2033 double-prime in size strings
+files:
+  - placement: default
+    # URL supplied at run time; MUST be a transparent-background PNG of the
+    # B&W fin master (see requirement note above).
+rationale: >-
+  Lineup research 2026-07-19 ranks stickers as the single best-supported
+  product add (margin + return-rate). The fin design die-cuts naturally.
+  B&W colorway first; other colorways can follow the same spec if it sells.
+directive_version: "2026-07-21"

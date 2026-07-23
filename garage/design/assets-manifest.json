@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-23T10:57:29",
+  "generated_at": "2026-07-23T11:17:27",
   "drive_root": "D:\\Products\\Printful Products",
   "drive_mounted": true,
   "printful_catalog": {
@@ -130,7 +130,7 @@
           "key": "poster",
           "drive_dir": "Posters_in",
           "printful_type": "poster (16 size variants, 5x7 up to 24x36)",
-          "art_status": "art-ready-not-live",
+          "art_status": "live",
           "note": "~489MB, 16 sizes x 11 colorways already composited as PSDs. Largest and messiest folder on the drive (triple-nested __MACOSX shadow tree, .DS_Store throughout, extra \"Posters_inches 2\" wrapper, top cleanup priority). Export-on-demand only when a specific size/colorway is needed for a push \u2014 never bulk-copy into the repo. Large-file hosting for a Printful push is an open question, see the plan's \"flagged for later\" section.",
           "scan": {
             "exists": true,

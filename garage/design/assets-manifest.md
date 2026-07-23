@@ -1,6 +1,6 @@
 # Assets manifest — GENERATED, do not hand-edit
 
-_Generated: 2026-07-23T10:57:29 · drive mounted: True · Printful catalog as of: 2026-07-23T10:21:07_
+_Generated: 2026-07-23T11:17:27 · drive mounted: True · Printful catalog as of: 2026-07-23T10:21:07_
 
 Regenerate: `.venv/Scripts/python.exe garage/design/reconcile_assets.py`
 (run `brain sync-products` first for a fresh Printful snapshot).
@@ -19,7 +19,7 @@ Shopify live-state is manual — see `shopify-live-note.md` (dated, may be stale
 | enamel-mug | **live** | 6.5MB | no | confirmed live 2026-07-21 as "Bodysurf Fin Enamel Cup" |
 | tumbler | **live** | 8.7MB | no | confirmed live 2026-07-21 as "Bodysurf Fin Tumbler" |
 | water-bottle | **art-ready-not-live** | 4.4MB | no | single size |
-| poster | **art-ready-not-live** | 512.6MB | yes | ~489MB, 16 sizes x 11 colorways already composited as PSDs. Largest and messiest |
+| poster | **live** | 512.6MB | yes | ~489MB, 16 sizes x 11 colorways already composited as PSDs. Largest and messiest |
 | beanie | **art-ready-not-live** | 21.4MB | no | 36 per-colorway mockup jpgs exist (not blank templates) |
 | tank-top | **template-only-no-art** | 1.5MB | no | NO Bodysurf Fin (or any) design has been applied to this product. Do not invent  |
 | can-cooler | **template-only-no-art** | 7.4MB | yes | same as tank-top — template only, no finished art exists. |

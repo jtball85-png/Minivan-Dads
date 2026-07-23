@@ -54,7 +54,7 @@ designs:
       - key: poster
         drive_dir: Posters_in
         printful_type: poster (16 size variants, 5x7 up to 24x36)
-        art_status: art-ready-not-live
+        art_status: live
         note: >-
           ~489MB, 16 sizes x 11 colorways already composited as PSDs. Largest
           and messiest folder on the drive (triple-nested __MACOSX shadow
