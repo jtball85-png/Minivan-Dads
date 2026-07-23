@@ -23,6 +23,45 @@ Decisions that shaped the project — keep these forever.
 
 Most recent session at the top.
 
+## Session — 2026-07-23
+
+**Focus:** CEO directed the drive-asset handoff (D:\Products\Printful Products), asked the brain to manage the design-to-POD workflow, then to review live products and ultimately run the full joshballart.com Shopify store (pics, descriptions, SEO, pricing), and finally to run the review through the board.
+
+**Decisions made:**
+- CEO approved the managed-asset-system plan including destructive drive cleanup (Category A macOS junk outright; Category B zips only after per-zip verification their contents exist extracted) and chose stop-at-tooling-ready — no product pushed live this pass.
+- CEO created two credentials this session (both CEO-only actions): a Josh Ball Art Printful API token (re-issued at ACCOUNT level after the single-store version couldn't read product templates), and the "JBA Brain" Shopify custom app (dev-dashboard flow) whose Admin API token was captured via a local OAuth code exchange after two browser-side attempts (incl. Claude-in-Chrome) failed.
+- CEO ruled color variants of one design = one product listing with variants, never one listing per color; "collection" = grouping across product types sharing a design.
+- CEO wants a board meeting to possibly redefine the Josh Ball Art brand before the prints/drinkware naming/description/SEO/pricing pass; W30 agenda is built and waiting; recommended order = #meeting on the 4 agenda decisions, then #boardroom on brand redefinition.
+
+**Problems solved:**
+- Bodysurf Fin master art recovered: real SVG master found on the drive (Designs Digital Illustrations\Bodysurf Fin Fill), verified visually against the CEO's reference, curated into garage/design/designs/bodysurf-fin/ — permanently ends the re-tracing failure mode.
+- Two Printful accounts discovered (old key → "Theminivandads" only): both now in .env (JBA primary, *_MVD preserved). JBA store is Shopify-platform → /sync/products API only; API product creation is manual-store-only, so new-product pushes stay a CEO dashboard click ("Add to store" from their 11 saved templates).
+- Manifest corrected three times as better data arrived: poster live (storefront fetch), beanie live (Printful API), can-cooler art exists in Printful cloud templates (not on drive). Every not-yet-live product (water bottle, tee, black mug, 2 can coolers) already has a finished Printful template — only the tank top has no art anywhere.
+- Shopify token: the OAuth exchange needs any non-browser HTTP client, not a hosted backend — garage/design/shopify_token_exchange.py POSTs the code+client secret and writes .env; token verified with GraphQL reads (write_products scope).
+- Silent empty-output bug (regression-tested): storefront agent filed a 2-byte report and ingest a 0-byte agenda — both hit the 8192 max_tokens cap with the whole budget eaten by adaptive thinking, and truncated output was treated as complete. Fixed: LLMTruncated raised on stop_reason=max_tokens in both call paths; <50-char reports/agendas refused, never written; caps raised (agent/ingest 24576, meeting 16384); SDK's "streaming required" guard on big caps handled by a drained-stream _create() helper.
+- Margin audit vs the 30% floor (Printful catalog costs): 97/189 variants below floor — tumbler 9% ($19.00 vs $17.29 cost), enamel cup 11%, mugs low-20s, framed poster 60/90 under; unframed poster (57–70%) and beanie (47%) healthy. Recommendations escalated in garage/store-review-2026-07-23.md; no prices touched.
+
+**Approaches discussed:**
+- Shopify connector is GraphQL-only (REST product endpoints deprecated for new apps); update_listing_copy + update_listing_images implemented with snapshot/restore; set_price stays ungranted → always escalates. First governed dry-run: ACT-2026-W30-0009, a tumbler copy rewrite in charter voice, awaiting CEO review.
+- Full store synced: 107 products (originals, POD, cyanotype drafts, Jacquard supplies) in hq/products/catalog.json; sync_products gracefully skips the Printful manual-store endpoints the ecommerce-platform store rejects.
+- Kept 3 zips on the drive during cleanup because they hold never-extracted content (Posters_in.zip has a 24x36 PSD missing from the extracted folder; Black Fin mug mockups; a can-cooler template PSD).
+
+**Left unresolved:**
+- CEO wants to REVISIT THE BOARD CYCLE PLAN next session (their words at end of day) — the W30 agenda (4 [CEO REQUIRED] decisions: Neptune's Garden unblock, mug/cup re-pricing, size standardization, stale-MVD escalation cleanup) is built but no meeting held.
+- Brand-redefinition boardroom session not yet run; prints/drinkware naming/SEO/pricing pass gated behind it.
+- Tumbler copy dry-run (ACT-2026-W30-0009) + 4 storefront title dry-runs (ACT-2026-W30-0010..0013) await CEO review; storefront directive still falsely says Shopify actions aren't registered (needs a #directive board pass).
+- Both Printful tokens and the Shopify client secret passed through chat transcripts — rotation owed at the next key-hygiene pass (see revisit-api-keys memory).
+- Large-file hosting for poster-scale Printful uploads still undecided; platform-aware Printful /sync/products connector extension not built.
+
+**Files changed this session:**
+```
+35 files changed, 11589 insertions(+), 225 deletions(-)
+(7 commits: ec0369b asset system, ef81b39 candidates+specs, 4d8268c JBA
+Printful access, 87d00db 11 templates read, 739894e store review/margin
+audit, b5d8de0 Shopify connector live, 7482c89 LLMTruncated fix + W30
+board cycle; full stat in git)
+```
+
 ## Session — 2026-07-21 (2)
 
 **Focus:** CEO wanted to shift focus to Printful merch beyond apparel (posters, mugs, etc.), starting with an existing Illustrator design ("Bodysurf Fin") with multiple color combos already pushed to the Josh Ball Art store, and asked Claude Code to manage merch and the store going forward.
