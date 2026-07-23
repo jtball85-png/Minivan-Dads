@@ -1,9 +1,14 @@
 model: claude-sonnet-5  # recommended for cost-appropriate structured synthesis; override freely
 
+# NOTE: with adaptive thinking, thinking tokens count against these caps —
+# a "big" cap can still produce an EMPTY text response if thinking eats it
+# all (observed 2026-07-23: agent + ingest at 8192 with the 107-product
+# catalog in context). llm.py now raises LLMTruncated instead of returning
+# truncated text; these caps are sized with thinking headroom.
 max_tokens:
   ask: 4096
-  ingest: 8192
-  meeting: 8192
+  ingest: 24576
+  meeting: 16384
   directive: 4096
   discussion: 1024
   # Boardroom caps include adaptive-thinking tokens — keep generous headroom
@@ -12,7 +17,7 @@ max_tokens:
   boardroom_moderator: 1500
   boardroom_floor: 3000
   boardroom_synthesis: 8192
-  agent: 8192
+  agent: 24576
 
 # How many web searches a department agent may burn per scheduled run.
 agent_max_searches: 8

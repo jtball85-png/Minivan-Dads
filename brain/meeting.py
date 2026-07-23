@@ -257,6 +257,11 @@ def run_ingest(hq: HQ, llm: LLM, config: BrainConfig, print_fn=print) -> dict:
         f"Reports discovered since the last meeting are already in your context."
     )
     raw_agenda = llm.call(system_blocks, trigger, max_tokens=config.max_tokens["ingest"])
+    if len(raw_agenda.strip()) < 50:
+        raise RuntimeError(
+            f"ingest produced {len(raw_agenda.strip())} chars — not a plausible "
+            f"agenda; nothing written (see LLMTruncated in brain/llm.py for the "
+            f"usual cause).")
 
     corrected_agenda, enforced = apply_governance(raw_agenda)
     upgrades = [e for e in enforced if e.upgraded]

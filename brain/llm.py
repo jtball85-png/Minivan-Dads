@@ -13,6 +13,25 @@ from brain.config import BrainConfig
 from brain.models import LLMUsageRecord
 
 
+class LLMTruncated(RuntimeError):
+    """The model hit the max_tokens cap mid-response. With adaptive thinking,
+    the whole budget can go to thinking with little or no text emitted — a
+    truncated response must never be treated as a complete report/agenda
+    (2026-07-23: both the storefront agent and ingest silently wrote empty
+    files this way after the 107-product catalog landed)."""
+
+    def __init__(self, context: str, max_tokens: int):
+        super().__init__(
+            f"LLM response truncated at the {max_tokens}-token cap during "
+            f"{context} — output is incomplete and was NOT used. Raise the "
+            f"relevant max_tokens entry in brain/config.yaml and retry.")
+
+
+def _check_not_truncated(response, max_tokens: int, context: str = "call") -> None:
+    if getattr(response, "stop_reason", None) == "max_tokens":
+        raise LLMTruncated(context, max_tokens)
+
+
 class LLM:
     def __init__(self, config: BrainConfig, hq=None, command: str | None = None):
         self.config = config
@@ -45,14 +64,28 @@ class LLM:
         except OSError:
             pass  # telemetry must never break the actual command
 
+    def _create(self, **kwargs):
+        """messages.create, upgrading to a drained stream when the SDK
+        demands it (large max_tokens trip its >10-minute non-streaming
+        guard). Returns the same final Message object either way."""
+        try:
+            return self.client.messages.create(**kwargs)
+        except ValueError as e:
+            if "Streaming is required" not in str(e):
+                raise
+            with self.client.messages.stream(**kwargs) as s:
+                s.until_done()
+                return s.get_final_message()
+
     def call(self, system_blocks: list[dict], user_message: str, max_tokens: int) -> str:
-        response = self.client.messages.create(
+        response = self._create(
             model=self.config.model,
             max_tokens=max_tokens,
             system=system_blocks,
             messages=[{"role": "user", "content": user_message}],
         )
         self._log_usage(response)
+        _check_not_truncated(response, max_tokens, context=getattr(self, "command", None) or "call")
         return "".join(block.text for block in response.content if block.type == "text")
 
     def call_with_web_search(
@@ -84,7 +117,7 @@ class LLM:
             tools.extend(extra_tools)
 
         while True:
-            response = self.client.messages.create(
+            response = self._create(
                 model=self.config.model,
                 max_tokens=max_tokens,
                 system=system_blocks,
@@ -92,6 +125,8 @@ class LLM:
                 tools=tools,
             )
             self._log_usage(response)
+            _check_not_truncated(response, max_tokens,
+                                 context=getattr(self, "command", None) or "web-search turn")
             collected.extend(
                 block.text for block in response.content if block.type == "text"
             )

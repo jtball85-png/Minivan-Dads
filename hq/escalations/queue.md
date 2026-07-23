@@ -76,3 +76,15 @@ position in this file):
 - Raised by: executor/storefront
 - Urgency: normal
 - Summary: Action rejected: printful.update_product — missing params: name; unexpected params: description, tags. Agent rationale: Current listing relies on a generic saying already used verbatim by unrelated Amazon/TeePublic sellers; anchoring the description explicitly in the minivan-dad identity and adding dad/road-trip keywords differentiates the listing and improves discoverability without touching name, price, or brand identity.
+
+## ESC-013
+- Raised: 2026-07-23
+- Raised by: storefront
+- Urgency: normal
+- Summary: Confirm status of the 5 draft Neptune's Garden giclée listings (all of priority-2 revenue currently unpurchasable) — publish if ready, or tell us what's blocking (Prodigi sample approval? incomplete copy?) so we can help unblock.
+
+## ESC-014
+- Raised: 2026-07-23
+- Raised by: storefront
+- Urgency: normal
+- Summary: Get actual Printful COGS for the mug/enamel-cup line and review pricing — published third-party base-cost estimates ($5.95–$8.25 for the 11oz mug) put our $9.00 price anywhere from comfortably above to well below the 30% margin floor; recommend confirming real cost and, if needed, raising the smallest mug tier to $12–13 and the enamel cup toward $18 to match market/margin.

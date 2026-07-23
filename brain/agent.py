@@ -138,6 +138,13 @@ def run_agent(dept: str, config: BrainConfig, hq: HQ, llm: LLM,
     )
 
     report = report.strip() + "\n"
+    if len(report.strip()) < 50:
+        # A real weekly report is never a couple of lines. Refuse to file it
+        # (and to overwrite a prior good report) rather than silently
+        # polluting HQ — the 2026-07-23 empty-report incident.
+        print_fn(f"[{dept}] ERROR: model returned {len(report.strip())} chars — "
+                 f"not a plausible report. Nothing written; retry the run.")
+        return 1
     path = hq.write_report(dept, week, report)
     print_fn(f"[{dept}] report written: {path}")
 
