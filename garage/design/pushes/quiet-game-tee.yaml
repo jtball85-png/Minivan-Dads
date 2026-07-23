@@ -1,0 +1,18 @@
+# Historical record: the first governed Printful push (2026-07-20), extracted
+# verbatim from create_printful_product.py's hardcoded constants when that
+# script was generalized into push_printful_product.py. Minivan Dads product,
+# now parked — kept for history and as the reference example of a spec.
+
+agent: creative
+product_name: "Let's play the quiet game. — Tee"
+external_id: mvd-quiet-game-tee-v1
+printful_product_id: 71          # Bella + Canvas 3001 Unisex Staple Tee
+colors: [Black, Navy, Dark Grey Heather]
+sizes: [S, M, L, XL, 2XL]
+files:
+  - placement: front
+    # URL supplied at run time via --files front=<url>
+rationale: >-
+  First governed Printful connector test — CEO-approved, quiet-game tee,
+  3 dark colorways.
+directive_version: "2026-07-20"

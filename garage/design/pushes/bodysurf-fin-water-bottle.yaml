@@ -1,0 +1,25 @@
+# First Josh Ball Art push candidate — PREPARED, NOT YET PUSHED.
+# Chosen per the 2026-07-23 plan: finished CEO art already exists on the
+# drive, product isn't live yet (so no risk to the 3 live drinkware
+# listings), single-size, small files. Goes live only after a CEO-approved
+# supervised run — this spec alone does nothing live.
+
+agent: creative
+product_name: "Bodysurf Fin Water Bottle"
+external_id: jba-bodysurf-fin-water-bottle-v1
+printful_product_id: 382         # Stainless Steel Water Bottle (17oz; White/Black variants)
+colors: [White]                  # matches the B&W art on the white bottle template
+sizes: ["17 oz"]
+files:
+  - placement: default
+    # Print file: derived from the CEO's real finished art at
+    # D:\Products\Printful Products\water_bottle_template\
+    #   "template_water_bottle B&W Bodysurf Fin.png"  (or re-export from the
+    # .ai/.psd next to it at print resolution). URL supplied at run time via
+    # --files default=<public-url> once a hosting location is chosen.
+rationale: >-
+  First Josh Ball Art governed push candidate. Real finished CEO art from the
+  asset drive (see garage/design/assets-manifest.md, water-bottle:
+  art-ready-not-live). Verify placement against Printful's printfile spec for
+  product 382 before the live run.
+directive_version: "2026-07-21"

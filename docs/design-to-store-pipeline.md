@@ -1,8 +1,24 @@
 # Design → Store Pipeline (the repeatable process)
 
 **Purpose.** Turn a research insight into a live, selling product — the same
-way every time. This is the playbook Minivan Dads runs for *every* new design,
-not a one-off. Read it top to bottom once; after that it's a checklist.
+way every time. This is the playbook for *every* new design, not a one-off.
+Read it top to bottom once; after that it's a checklist.
+
+> **Company note (2026-07-23):** written in the Minivan Dads era; the brain
+> now runs **Josh Ball Art** (Shopify at joshballart.com is the live store;
+> Etsy is dormant — "step zero" below applies only if/when Etsy is revived).
+> The flywheel itself is unchanged.
+
+> **Second entry point — existing finished art (added 2026-07-23).** Steps
+> 1–2 assume a design must be researched and drafted. But the CEO's asset
+> drive already holds finished, CEO-made artwork for many products — indexed
+> in `garage/design/assets-manifest.md` (regenerate with
+> `garage/design/reconcile_assets.py`). When the manifest shows a product as
+> **art-ready-not-live**, skip straight to Step 3: write a spec in
+> `garage/design/pushes/<name>.yaml` and run
+> `garage/design/push_printful_product.py` (dry-run by default; `--live`
+> only after CEO approval). Never re-create art that already exists — the
+> real masters are indexed in `garage/design/designs/`.
 
 **Plain-language rule of the whole thing:** the machine (Claude Code + the
 department agents) does the making and the drafting; **you (CEO) do the four

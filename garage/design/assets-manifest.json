@@ -1,0 +1,256 @@
+{
+  "generated_at": "2026-07-23T10:57:29",
+  "drive_root": "D:\\Products\\Printful Products",
+  "drive_mounted": true,
+  "printful_catalog": {
+    "generated_at": "2026-07-23T10:21:07",
+    "product_names": [
+      "Let's play the quiet game. \u2014 Tee  [printful, synced, price: not set]"
+    ]
+  },
+  "shopify_note": {
+    "present": true,
+    "path": "garage\\design\\shopify-live-note.md",
+    "caveat": "manual snapshot, dated inside the file \u2014 may be stale"
+  },
+  "designs": {
+    "bodysurf-fin": {
+      "master": "garage/design/designs/bodysurf-fin/bodysurf-fin-master.svg",
+      "source_ai": [
+        "D:\\Products\\Designs Digital Illustrations\\Bodysurf Fin Fill\\Bodysurf Fin Fill.ai",
+        "D:\\Products\\Designs Digital Illustrations\\Bodysurf Fin Fill\\Bodysurf Fin Fill BW ONLY.ai"
+      ],
+      "colorways": [
+        "Black/White",
+        "Red/Yellow",
+        "Peach/Burnt Orange",
+        "Blue/Pink",
+        "Peach/Blue",
+        "Lime Green/Electric Blue",
+        "Lavender/Teal"
+      ],
+      "products": [
+        {
+          "key": "mug-white-glossy",
+          "drive_dir": "Mug_all_sizes White",
+          "printful_type": "mug (11oz/15oz/20oz, white glossy)",
+          "art_status": "live",
+          "note": "confirmed live 2026-07-21 as \"Bodysurf Fin White Glossy Mug\" (joshballart.com/products/white-glossy-mug-1); drive folder also has redundant nested duplicate colorway folders + an \"archive (3)\" subfolder + 8 unopened zips \u2014 cleanup candidate",
+          "scan": {
+            "exists": true,
+            "size_mb": 144.6,
+            "file_types": {
+              ".jpg": 210,
+              ".png": 15,
+              ".psd": 8,
+              ".ai": 6,
+              ".zip": 1
+            },
+            "junk": [],
+            "leftover_zips": [
+              "Mug_White_11,15,20oz Bodysurf Black Fin\\archive.zip"
+            ]
+          }
+        },
+        {
+          "key": "mug-black",
+          "drive_dir": "Mug_all_sizes Black",
+          "printful_type": "mug (black base)",
+          "art_status": "art-ready-not-live",
+          "note": "distinct art from the white-glossy mug's live listing; not confirmed live under this colorway \u2014 verify against shopify-live-note.md before assuming",
+          "scan": {
+            "exists": true,
+            "size_mb": 10.5,
+            "file_types": {
+              ".jpg": 16,
+              ".png": 5,
+              ".psd": 4
+            },
+            "junk": [],
+            "leftover_zips": []
+          }
+        },
+        {
+          "key": "enamel-mug",
+          "drive_dir": "Enamel mug",
+          "printful_type": "enamel camp mug, 12oz",
+          "art_status": "live",
+          "note": "confirmed live 2026-07-21 as \"Bodysurf Fin Enamel Cup\"",
+          "scan": {
+            "exists": true,
+            "size_mb": 6.5,
+            "file_types": {
+              ".png": 8,
+              ".psd": 3
+            },
+            "junk": [],
+            "leftover_zips": []
+          }
+        },
+        {
+          "key": "tumbler",
+          "drive_dir": "Wine tumbler guidelines",
+          "printful_type": "wine tumbler",
+          "art_status": "live",
+          "note": "confirmed live 2026-07-21 as \"Bodysurf Fin Tumbler\"",
+          "scan": {
+            "exists": true,
+            "size_mb": 8.7,
+            "file_types": {
+              ".jpg": 9,
+              ".png": 8,
+              ".psd": 2,
+              ".ai": 1,
+              ".pdf": 1
+            },
+            "junk": [],
+            "leftover_zips": []
+          }
+        },
+        {
+          "key": "water-bottle",
+          "drive_dir": "water_bottle_template",
+          "printful_type": "water bottle",
+          "art_status": "art-ready-not-live",
+          "note": "single size; B&W Bodysurf Fin design present as .ai/.psd/.jpg/.png; smallest/simplest not-yet-live candidate \u2014 first pick for the generalized driver's dry-run rehearsal",
+          "scan": {
+            "exists": true,
+            "size_mb": 4.4,
+            "file_types": {
+              ".psd": 2,
+              ".png": 2,
+              ".ai": 1,
+              ".jpg": 1
+            },
+            "junk": [],
+            "leftover_zips": []
+          }
+        },
+        {
+          "key": "poster",
+          "drive_dir": "Posters_in",
+          "printful_type": "poster (16 size variants, 5x7 up to 24x36)",
+          "art_status": "art-ready-not-live",
+          "note": "~489MB, 16 sizes x 11 colorways already composited as PSDs. Largest and messiest folder on the drive (triple-nested __MACOSX shadow tree, .DS_Store throughout, extra \"Posters_inches 2\" wrapper, top cleanup priority). Export-on-demand only when a specific size/colorway is needed for a push \u2014 never bulk-copy into the repo. Large-file hosting for a Printful push is an open question, see the plan's \"flagged for later\" section.",
+          "scan": {
+            "exists": true,
+            "size_mb": 512.6,
+            "file_types": {
+              ".png": 75,
+              ".psd": 23,
+              ".jpg": 11,
+              ".zip": 1,
+              ".pdf": 1
+            },
+            "junk": [],
+            "leftover_zips": [
+              "Posters_in.zip"
+            ]
+          }
+        },
+        {
+          "key": "beanie",
+          "drive_dir": "Embroidered Beanie",
+          "printful_type": "embroidered beanie",
+          "art_status": "art-ready-not-live",
+          "note": "36 per-colorway mockup jpgs exist (not blank templates); real embroidery guideline PDF + .ai templates already curated at garage/design/printful-templates/embroidered-beanie/",
+          "scan": {
+            "exists": true,
+            "size_mb": 21.4,
+            "file_types": {
+              ".jpg": 36,
+              ".psd": 2,
+              ".png": 2,
+              ".ai": 1,
+              ".pdf": 1
+            },
+            "junk": [],
+            "leftover_zips": []
+          }
+        },
+        {
+          "key": "tank-top",
+          "drive_dir": "Men\u2019s Staple Tank Top  Bella + Canvas 3480",
+          "printful_type": "tank top (Bella+Canvas 3480)",
+          "art_status": "template-only-no-art",
+          "note": "NO Bodysurf Fin (or any) design has been applied to this product. Do not invent art \u2014 needs a real garage-design pass with CEO approval if ever pursued.",
+          "scan": {
+            "exists": true,
+            "size_mb": 1.5,
+            "file_types": {
+              ".psd": 2,
+              ".png": 1
+            },
+            "junk": [],
+            "leftover_zips": []
+          }
+        },
+        {
+          "key": "can-cooler",
+          "drive_dir": "Can Cooler",
+          "printful_type": "can cooler",
+          "art_status": "template-only-no-art",
+          "note": "same as tank-top \u2014 template only, no finished art exists.",
+          "scan": {
+            "exists": true,
+            "size_mb": 7.4,
+            "file_types": {
+              ".png": 7,
+              ".psd": 5,
+              ".zip": 1
+            },
+            "junk": [],
+            "leftover_zips": [
+              "Templates_Can Cooler.zip"
+            ]
+          }
+        }
+      ]
+    },
+    "bodysurf-fin-tshirt-candidate": {
+      "parent_design": "bodysurf-fin",
+      "drive_dir": "Unisex Staple T-Shirt  Bella + Canvas 3001",
+      "printful_type": "t-shirt (Bella+Canvas 3001)",
+      "art_status": "art-ready-not-live",
+      "note": "has an unopened \"Zips\" folder of raw Printful downloads alongside the processed template \u2014 worth a look before treating as fully curated.",
+      "scan": {
+        "exists": true,
+        "size_mb": 14.6,
+        "file_types": {
+          ".jpg": 16,
+          ".psd": 5,
+          ".png": 4
+        },
+        "junk": [],
+        "leftover_zips": []
+      }
+    }
+  },
+  "brand_logos": {
+    "location": "D:\\Josh Ball Art Branding",
+    "note": "Distinct from the Bodysurf Fin product design \u2014 brand identity, CEO-only per charter. Referenced here for the manifest's completeness, not \"managed\" as a POD product. Files: \"Josh Ball Art Logo Design.ai\" (+ a \"(1)\" variant), plus transparent/white-background/sumi-background PNG exports."
+  },
+  "junk_report": [
+    {
+      "folder": "D:\\Products\\Printful Products\\Mug_all_sizes White",
+      "junk": [],
+      "leftover_zips": [
+        "Mug_White_11,15,20oz Bodysurf Black Fin\\archive.zip"
+      ]
+    },
+    {
+      "folder": "D:\\Products\\Printful Products\\Posters_in",
+      "junk": [],
+      "leftover_zips": [
+        "Posters_in.zip"
+      ]
+    },
+    {
+      "folder": "D:\\Products\\Printful Products\\Can Cooler",
+      "junk": [],
+      "leftover_zips": [
+        "Templates_Can Cooler.zip"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+# Hand-curated facts about the CEO's Printful/design asset drive, captured
+# from the 2026-07-23 inventory session. This is judgment ("is this folder
+# finished art or just a blank template?") that a filename heuristic can't
+# reliably reproduce — reconcile_assets.py merges this with a read-only scan
+# of the drive, hq/products/catalog.json, and shopify-live-note.md to
+# produce the generated assets-manifest.{json,md}.
+#
+# drive_root is checked at scan time; if the drive isn't mounted, paths below
+# are still reported (from this seed) but flagged unverified rather than
+# failing.
+
+drive_root: "D:\\Products\\Printful Products"
+
+designs:
+  bodysurf-fin:
+    master: garage/design/designs/bodysurf-fin/bodysurf-fin-master.svg
+    source_ai:
+      - "D:\\Products\\Designs Digital Illustrations\\Bodysurf Fin Fill\\Bodysurf Fin Fill.ai"
+      - "D:\\Products\\Designs Digital Illustrations\\Bodysurf Fin Fill\\Bodysurf Fin Fill BW ONLY.ai"
+    colorways:
+      - Black/White
+      - Red/Yellow
+      - Peach/Burnt Orange
+      - Blue/Pink
+      - Peach/Blue
+      - Lime Green/Electric Blue
+      - Lavender/Teal
+    products:
+      - key: mug-white-glossy
+        drive_dir: "Mug_all_sizes White"
+        printful_type: mug (11oz/15oz/20oz, white glossy)
+        art_status: live
+        note: confirmed live 2026-07-21 as "Bodysurf Fin White Glossy Mug" (joshballart.com/products/white-glossy-mug-1); drive folder also has redundant nested duplicate colorway folders + an "archive (3)" subfolder + 8 unopened zips — cleanup candidate
+      - key: mug-black
+        drive_dir: "Mug_all_sizes Black"
+        printful_type: mug (black base)
+        art_status: art-ready-not-live
+        note: distinct art from the white-glossy mug's live listing; not confirmed live under this colorway — verify against shopify-live-note.md before assuming
+      - key: enamel-mug
+        drive_dir: "Enamel mug"
+        printful_type: enamel camp mug, 12oz
+        art_status: live
+        note: confirmed live 2026-07-21 as "Bodysurf Fin Enamel Cup"
+      - key: tumbler
+        drive_dir: "Wine tumbler guidelines"
+        printful_type: wine tumbler
+        art_status: live
+        note: confirmed live 2026-07-21 as "Bodysurf Fin Tumbler"
+      - key: water-bottle
+        drive_dir: water_bottle_template
+        printful_type: water bottle
+        art_status: art-ready-not-live
+        note: single size; B&W Bodysurf Fin design present as .ai/.psd/.jpg/.png; smallest/simplest not-yet-live candidate — first pick for the generalized driver's dry-run rehearsal
+      - key: poster
+        drive_dir: Posters_in
+        printful_type: poster (16 size variants, 5x7 up to 24x36)
+        art_status: art-ready-not-live
+        note: >-
+          ~489MB, 16 sizes x 11 colorways already composited as PSDs. Largest
+          and messiest folder on the drive (triple-nested __MACOSX shadow
+          tree, .DS_Store throughout, extra "Posters_inches 2" wrapper,
+          top cleanup priority). Export-on-demand only when a specific
+          size/colorway is needed for a push — never bulk-copy into the repo.
+          Large-file hosting for a Printful push is an open question, see
+          the plan's "flagged for later" section.
+      - key: beanie
+        drive_dir: Embroidered Beanie
+        printful_type: embroidered beanie
+        art_status: art-ready-not-live
+        note: 36 per-colorway mockup jpgs exist (not blank templates); real embroidery guideline PDF + .ai templates already curated at garage/design/printful-templates/embroidered-beanie/
+      - key: tank-top
+        drive_dir: "Men’s Staple Tank Top  Bella + Canvas 3480"
+        printful_type: tank top (Bella+Canvas 3480)
+        art_status: template-only-no-art
+        note: NO Bodysurf Fin (or any) design has been applied to this product. Do not invent art — needs a real garage-design pass with CEO approval if ever pursued.
+      - key: can-cooler
+        drive_dir: Can Cooler
+        printful_type: can cooler
+        art_status: template-only-no-art
+        note: same as tank-top — template only, no finished art exists.
+
+# T-shirt is already curated at garage/design/printful-templates/t-shirt-bella-canvas-3001/
+# (Minivan Dads' quiet-game tee, a different design, parked) — not a Bodysurf Fin product.
+# Drive folder "Unisex Staple T-Shirt  Bella + Canvas 3001" additionally contains a
+# Bodysurf Fin master PSD + "Red Yellow Tshirt Mockups", not yet reflected as a live
+# or pushed product — recorded here for completeness, not yet classified live/not-live.
+  bodysurf-fin-tshirt-candidate:
+    parent_design: bodysurf-fin
+    drive_dir: "Unisex Staple T-Shirt  Bella + Canvas 3001"
+    printful_type: t-shirt (Bella+Canvas 3001)
+    art_status: art-ready-not-live
+    note: has an unopened "Zips" folder of raw Printful downloads alongside the processed template — worth a look before treating as fully curated.
+
+brand_logos:
+  location: "D:\\Josh Ball Art Branding"
+  note: >-
+    Distinct from the Bodysurf Fin product design — brand identity, CEO-only
+    per charter. Referenced here for the manifest's completeness, not
+    "managed" as a POD product. Files: "Josh Ball Art Logo Design.ai" (+ a
+    "(1)" variant), plus transparent/white-background/sumi-background PNG
+    exports.
+
+known_junk_patterns:
+  - "__MACOSX"
+  - ".DS_Store"
+  - pattern: "._*"
+    note: macOS AppleDouble sidecar files
+  - note: >-
+      Posters_in and Mug_all_sizes White additionally have redundant nested
+      duplicate folders and unopened raw-download zips beyond the simple
+      junk patterns above — reconcile_assets.py's scan should flag these by
+      size/name heuristics but a human still confirms before deletion.
