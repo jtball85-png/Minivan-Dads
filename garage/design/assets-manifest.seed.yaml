@@ -75,9 +75,15 @@ designs:
         note: NO Bodysurf Fin (or any) design has been applied to this product. Do not invent art — needs a real garage-design pass with CEO approval if ever pursued.
       - key: can-cooler
         drive_dir: Can Cooler
-        printful_type: can cooler
-        art_status: template-only-no-art
-        note: same as tank-top — template only, no finished art exists.
+        printful_type: can cooler (regular + skinny)
+        art_status: art-ready-not-live
+        note: >-
+          CORRECTED 2026-07-23: finished fin art EXISTS — but in Printful's
+          cloud, not on the drive (saved product templates 97474610 "Can
+          cooler" + 97477081 "Can Cooler Skinny", catalog product 764,
+          red/pink fin on yellow — mockups verified via API). The drive
+          folder holds only the blank template, which is why the drive-only
+          inventory misclassified this as no-art.
 
 # T-shirt is already curated at garage/design/printful-templates/t-shirt-bella-canvas-3001/
 # (Minivan Dads' quiet-game tee, a different design, parked) — not a Bodysurf Fin product.
@@ -90,6 +96,23 @@ designs:
     printful_type: t-shirt (Bella+Canvas 3001)
     art_status: art-ready-not-live
     note: has an unopened "Zips" folder of raw Printful downloads alongside the processed template — worth a look before treating as fully curated.
+
+# The CEO's saved Printful product templates (account-level, read via
+# GET /product-templates with the account-scoped JBA token, 2026-07-23).
+# A template = design already placed on a product in Printful's designer —
+# one dashboard "Add to store" click away from a live product.
+printful_product_templates:
+  - {id: 64338391, title: White glossy mug, catalog_product: 19, store_status: live}
+  - {id: 64379178, title: Enamel Mug, catalog_product: 407, store_status: live}
+  - {id: 64382114, title: Wine tumbler, catalog_product: 632, store_status: live}
+  - {id: 64383828, title: Stainless steel water bottle, catalog_product: 382, store_status: not-live}
+  - {id: 64398409, title: Black Glossy Mug, catalog_product: 300, store_status: not-live}
+  - {id: 64578267, title: Cuffed Beanie, catalog_product: 266, store_status: live}
+  - {id: 64635840, title: Poster, catalog_product: 1, store_status: live}
+  - {id: 64782624, title: Framed poster, catalog_product: 2, store_status: live}
+  - {id: 69610932, title: Unisex t-shirt, catalog_product: 71, store_status: not-live}
+  - {id: 97474610, title: Can cooler, catalog_product: 764, store_status: not-live}
+  - {id: 97477081, title: Can Cooler Skinny, catalog_product: 764, store_status: not-live}
 
 brand_logos:
   location: "D:\\Josh Ball Art Branding"

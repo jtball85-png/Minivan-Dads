@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-23T11:36:26",
+  "generated_at": "2026-07-23T11:49:06",
   "drive_root": "D:\\Products\\Printful Products",
   "drive_mounted": true,
   "printful_catalog": {
@@ -188,9 +188,9 @@
         {
           "key": "can-cooler",
           "drive_dir": "Can Cooler",
-          "printful_type": "can cooler",
-          "art_status": "template-only-no-art",
-          "note": "same as tank-top \u2014 template only, no finished art exists.",
+          "printful_type": "can cooler (regular + skinny)",
+          "art_status": "art-ready-not-live",
+          "note": "CORRECTED 2026-07-23: finished fin art EXISTS \u2014 but in Printful's cloud, not on the drive (saved product templates 97474610 \"Can cooler\" + 97477081 \"Can Cooler Skinny\", catalog product 764, red/pink fin on yellow \u2014 mockups verified via API). The drive folder holds only the blank template, which is why the drive-only inventory misclassified this as no-art.",
           "scan": {
             "exists": true,
             "size_mb": 7.4,

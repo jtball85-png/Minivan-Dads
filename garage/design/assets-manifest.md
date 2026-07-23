@@ -1,6 +1,6 @@
 # Assets manifest — GENERATED, do not hand-edit
 
-_Generated: 2026-07-23T11:36:26 · drive mounted: True · Printful catalog as of: 2026-07-23T10:21:07_
+_Generated: 2026-07-23T11:49:06 · drive mounted: True · Printful catalog as of: 2026-07-23T10:21:07_
 
 Regenerate: `.venv/Scripts/python.exe garage/design/reconcile_assets.py`
 (run `brain sync-products` first for a fresh Printful snapshot).
@@ -22,7 +22,7 @@ Shopify live-state is manual — see `shopify-live-note.md` (dated, may be stale
 | poster | **live** | 512.6MB | yes | ~489MB, 16 sizes x 11 colorways already composited as PSDs. Largest and messiest |
 | beanie | **live** | 21.4MB | no | API-confirmed live 2026-07-23 as "Shred in Style Black Fin Bodysurf Cuffed Beani |
 | tank-top | **template-only-no-art** | 1.5MB | no | NO Bodysurf Fin (or any) design has been applied to this product. Do not invent  |
-| can-cooler | **template-only-no-art** | 7.4MB | yes | same as tank-top — template only, no finished art exists. |
+| can-cooler | **art-ready-not-live** | 7.4MB | yes | CORRECTED 2026-07-23: finished fin art EXISTS — but in Printful's cloud, not on  |
 
 ## Design: bodysurf-fin-tshirt-candidate
 
