@@ -122,6 +122,46 @@ def _color_size_from_sync_variant(sv: dict) -> tuple[str, str]:
     return "", ""
 
 
+def product_view_from_shopify(node: dict, storefront_base: str | None = None) -> ProductView:
+    """Normalize one Shopify GraphQL product node (as returned by
+    ShopifyConnector.list_products) into a ProductView. Color/size come from
+    each variant's named selectedOptions when present, falling back to the
+    ' / '-split of the variant title (Printful-pushed products use
+    'Size / Color' or single-option titles)."""
+    variants = []
+    for edge in (node.get("variants") or {}).get("edges", []):
+        v = edge["node"]
+        opts = {o["name"].strip().lower(): o["value"]
+                for o in v.get("selectedOptions", [])}
+        color = opts.get("color") or opts.get("colour") or ""
+        size = opts.get("size") or ""
+        if not (color or size):
+            parts = [p.strip() for p in str(v.get("title", "")).split(" / ")]
+            if len(parts) == 2:
+                size, color = parts[0], parts[1]
+            elif parts and parts[0] not in ("", "Default Title"):
+                color = parts[0]
+        variants.append(VariantView(
+            color=color, size=size,
+            sync_variant_id=int(v["legacyResourceId"]) if v.get("legacyResourceId") else None,
+            retail_price=v.get("price"),
+        ))
+    thumb = (((node.get("featuredMedia") or {}).get("preview") or {})
+             .get("image") or {}).get("url")
+    handle = node.get("handle")
+    url = (f"{storefront_base.rstrip('/')}/products/{handle}"
+           if storefront_base and handle else None)
+    return ProductView(
+        platform="shopify",
+        product_id=str(node.get("legacyResourceId") or node.get("id", "")),
+        title=node.get("title", ""),
+        status=str(node.get("status", "")).lower(),
+        external_id=node.get("handle"),
+        thumbnail_url=thumb, url=url,
+        variants=variants,
+    )
+
+
 def product_view_from_printful(detail: dict) -> ProductView:
     """Normalize one Printful GET /store/products/{id} result
     ({'sync_product': ..., 'sync_variants': [...]}) into a ProductView."""

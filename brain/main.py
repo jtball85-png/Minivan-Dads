@@ -360,6 +360,11 @@ def build_connectors(env=None) -> dict:
         from brain.connectors.etsy import EtsyConnector
         connectors["etsy"] = EtsyConnector(
             api_key=env["ETSY_API_KEY"], shop_id=env["ETSY_SHOP_ID"])
+    if env.get("SHOPIFY_ACCESS_TOKEN") and env.get("SHOPIFY_STORE_DOMAIN"):
+        from brain.connectors.shopify import ShopifyConnector
+        connectors["shopify"] = ShopifyConnector(
+            access_token=env["SHOPIFY_ACCESS_TOKEN"],
+            store_domain=env["SHOPIFY_STORE_DOMAIN"])
     return connectors
 
 
@@ -382,13 +387,25 @@ def sync_products(hq: HQ, connectors: dict) -> list[dict]:
     snapshot. Returns the product dicts written."""
     from datetime import datetime
 
-    from brain.products import product_view_from_printful
+    from brain.products import (product_view_from_printful,
+                                product_view_from_shopify)
 
     products: list[dict] = []
     printful = connectors.get("printful")
     if printful is not None:
-        products += [product_view_from_printful(d).to_dict()
-                     for d in printful.list_products()]
+        from brain.connectors.printful import PrintfulError
+        try:
+            products += [product_view_from_printful(d).to_dict()
+                         for d in printful.list_products()]
+        except PrintfulError as e:
+            # Ecommerce-platform stores (e.g. the Shopify-connected JBA store)
+            # reject the manual-store product endpoints; their products come
+            # in through the Shopify connector below instead of failing sync.
+            print(f"note: printful product pull skipped ({e})")
+    shopify = connectors.get("shopify")
+    if shopify is not None and getattr(shopify, "connected", False):
+        products += [product_view_from_shopify(n).to_dict()
+                     for n in shopify.list_products()]
     etsy = connectors.get("etsy")
     if etsy is not None and getattr(etsy, "connected", False):
         pass  # Etsy listings fold in here once the connector is wired.
