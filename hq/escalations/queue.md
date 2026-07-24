@@ -88,3 +88,9 @@ position in this file):
 - Raised by: storefront
 - Urgency: normal
 - Summary: Get actual Printful COGS for the mug/enamel-cup line and review pricing — published third-party base-cost estimates ($5.95–$8.25 for the 11oz mug) put our $9.00 price anywhere from comfortably above to well below the 30% margin floor; recommend confirming real cost and, if needed, raising the smallest mug tier to $12–13 and the enamel cup toward $18 to match market/margin.
+
+## ESC-015
+- Raised: 2026-07-24
+- Raised by: market_intel
+- Urgency: normal
+- Summary: Outdoor beach/park workshops will need both a Ventura city/county commercial-use permit (~$190/day/location plus a certificate of insurance naming the city/county as additional insured, filed ~30 business days ahead) and a professional-liability add-on beyond basic general liability (~$24–30/month general liability plus ~$10/month professional liability) — CEO/counsel should decide whether to budget and file for this now if the first forage-and-print popup is being planned this season, since lead time is real.
